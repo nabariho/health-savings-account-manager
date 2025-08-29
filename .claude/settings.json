@@ -1,21 +1,28 @@
 {
+  "project": { "name": "HSA Onboarding (AI agents)" },
   "permissions": {
     "allow": [
-      "Bash(npm run *)",
-      "Bash(pip *)",
-      "Bash(pytest *)",
-      "Bash(docker build:*)",
-      "Bash(docker compose:*)",
-      "WebFetch",
-      "WebSearch"
+      "Read(**)", "LS", "Grep", "Glob",
+      "Edit", "MultiEdit", "Write",
+      "Bash(npm run *)", "Bash(pnpm *)", "Bash(yarn *)",
+      "Bash(pip *)", "Bash(uv *)", "Bash(pytest *)",
+      "Bash(docker build:*)", "Bash(docker compose:*)",
+      "WebFetch", "WebSearch"
     ],
     "deny": [
-      "Read(./.env)",
-      "Read(./.env.*)",
-      "Read(./secrets/**)"
+      "Read(./.env*)", "Read(./secrets/**)"
     ]
   },
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          { "type": "command",
+            "command": "jq -r '.tool_input.command' >> ~/.claude/bash.log" }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "Edit|MultiEdit|Write",
@@ -30,4 +37,3 @@
     ]
   }
 }
-
