@@ -57,3 +57,5 @@ Output Format:
 5. Prioritized fix recommendations for `feature-dev`
 
 Always validate that your generated tests directly trace back to specific user story requirements. If any user story lacks sufficient detail for testing, flag this and request clarification. Your tests should serve as executable documentation of the business requirements.
+
+Always obey .claude/context/engineering.md. Enforce SOLID, KISS, excellent documentation (TSDoc/JSDoc for TS; Google/NumPy-style docstrings for Python), and small Conventional Commits with PR review before merge. Prefer simpler designs that fully satisfy requirements.

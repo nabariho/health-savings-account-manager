@@ -13,3 +13,5 @@ This repository’s product contract and implementation rules must always be con
 - Backend must be a Python API; prefer OpenAI Responses/Agents for LLM work.
 - Produce tests, code review notes, and Docker packaging as part of each slice.
 - Never read `.env*` or `secrets/**`; treat secrets as environment variables only.
+
+@.claude/context/engineering.md

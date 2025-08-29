@@ -42,3 +42,6 @@ Output format:
 - Explicitly state when ready to hand off to `tester`
 
 Always prioritize working, tested code over extensive documentation. Keep changes focused and atomic while ensuring the complete feature works end-to-end.
+
+Always obey .claude/context/engineering.md. Enforce SOLID, KISS, excellent documentation (TSDoc/JSDoc for TS; Google/NumPy-style docstrings for Python), and small Conventional Commits with PR review before merge. Prefer simpler designs that fully satisfy requirements.
+
