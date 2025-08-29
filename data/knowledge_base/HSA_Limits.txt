@@ -1,0 +1,140 @@
+# HSA Contribution Limits and Guidelines
+
+## Annual Contribution Limits
+
+### 2024 HSA Contribution Limits
+**Self-Only Coverage:**
+- Maximum annual contribution: $4,150
+- Monthly contribution limit: $345.83
+
+**Family Coverage:**
+- Maximum annual contribution: $8,300
+- Monthly contribution limit: $691.67
+
+**Catch-Up Contributions (Age 55+):**
+- Additional annual contribution: $1,000
+- Additional monthly contribution: $83.33
+
+### 2023 HSA Contribution Limits (for reference)
+**Self-Only Coverage:**
+- Maximum annual contribution: $3,850
+- Monthly contribution limit: $320.83
+
+**Family Coverage:**
+- Maximum annual contribution: $7,750
+- Monthly contribution limit: $645.83
+
+**Catch-Up Contributions (Age 55+):**
+- Additional annual contribution: $1,000
+
+## High-Deductible Health Plan (HDHP) Requirements
+
+### 2024 HDHP Minimum Deductibles
+- Self-only coverage: $1,600
+- Family coverage: $3,200
+
+### 2024 HDHP Maximum Out-of-Pocket Expenses
+- Self-only coverage: $8,050
+- Family coverage: $16,100
+
+### 2023 HDHP Requirements (for reference)
+**Minimum Deductibles:**
+- Self-only coverage: $1,500
+- Family coverage: $3,000
+
+**Maximum Out-of-Pocket Expenses:**
+- Self-only coverage: $7,500
+- Family coverage: $15,000
+
+## Special Rules and Limitations
+
+### Last-Month Rule
+If you become HSA-eligible during the year, you may be able to make the full annual contribution if you remain eligible through December 31st and the entire following year.
+
+### Testing Period
+If you use the Last-Month Rule, you must remain HSA-eligible for the entire following year (testing period) or face penalties and taxes on excess contributions.
+
+### Married Filing Separately
+If you are married filing separately and both spouses have HSAs:
+- Each spouse can contribute up to their individual limit
+- Catch-up contributions apply individually if age 55 or older
+
+### Employer Contributions
+- Employer contributions count toward your annual limit
+- Employer contributions are not taxable income to you
+- You cannot deduct employer contributions on your tax return
+
+## Pro-Rating Rules
+
+### Mid-Year Changes in Coverage
+Contributions may be pro-rated based on:
+- Number of months you were HSA-eligible
+- Type of coverage (self-only vs. family)
+- Changes in HDHP status
+
+### Example Scenarios
+**Scenario 1:** Employee becomes HSA-eligible in July
+- Eligible months: July-December (6 months)
+- Self-only maximum: $4,150 × 6/12 = $2,075
+
+**Scenario 2:** Employee changes from self-only to family coverage mid-year
+- Jan-June self-only: $4,150 × 6/12 = $2,075
+- July-Dec family: $8,300 × 6/12 = $4,150
+- Total allowed: $6,225
+
+## Age-Based Rules
+
+### Catch-Up Contributions
+- Available to individuals age 55 or older
+- Additional $1,000 per year
+- Both spouses can make catch-up contributions if both are 55+
+- Each spouse needs their own HSA for separate catch-up contributions
+
+### Medicare Enrollment
+- HSA contributions must stop the month before Medicare enrollment
+- Existing HSA funds can still be used for qualified expenses
+- No penalty for continued ownership after 65
+
+## Excess Contribution Rules
+
+### Excess Contribution Penalties
+- 6% excise tax per year on excess amounts
+- Must be corrected by removing excess plus earnings
+- Deadline for correction: Due date of tax return (including extensions)
+
+### Correction Methods
+1. **Withdrawal Method:** Remove excess contribution and attributable earnings
+2. **Carry-Forward Method:** Apply excess to next year's contribution limit (if eligible)
+
+## Income Limits
+
+### No Income Phase-Out
+Unlike other tax-advantaged accounts, HSAs have:
+- No income limits for contributions
+- No phase-out of contribution limits based on income
+- Available to all income levels (subject to eligibility requirements)
+
+## Contribution Timing
+
+### Deadline for Contributions
+- Prior tax year contributions: April 15th (tax filing deadline)
+- Current tax year contributions: Can be made throughout the year
+- No requirement for equal monthly contributions
+
+### Best Practices
+- Front-load contributions early in the year for maximum tax-free growth
+- Consider payroll deductions for FICA tax savings (if available)
+- Track contributions carefully to avoid exceeding limits
+
+## State Tax Considerations
+
+### State Conformity
+Most states conform to federal HSA tax treatment, but some exceptions exist:
+- California: HSA contributions are taxable income
+- New Jersey: HSA contributions are taxable income
+- Alabama: Limited deduction for HSA contributions
+
+### Employer Considerations
+- Some states may tax employer HSA contributions
+- Consult state-specific guidance for compliance
+- Consider impact on payroll tax calculations

@@ -1,0 +1,103 @@
+/**
+ * Global CSS styles for the HSA onboarding application.
+ * 
+ * Includes Tailwind CSS base styles and custom global styles.
+ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Global styles */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-feature-settings: 'rlig' 1, 'calt' 1;
+  }
+
+  /* Focus styles for accessibility */
+  *:focus {
+    outline: 2px solid theme(colors.primary.500);
+    outline-offset: 2px;
+  }
+
+  /* Remove focus outline for mouse users */
+  .js-focus-visible *:focus:not(.focus-visible) {
+    outline: none;
+  }
+}
+
+/* Custom component styles */
+@layer components {
+  /* Form input styles */
+  .input-field {
+    @apply block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm;
+  }
+
+  .input-field--error {
+    @apply border-red-300 text-red-900 placeholder-red-300 focus:border-red-500 focus:ring-red-500;
+  }
+
+  /* Card styles */
+  .card {
+    @apply bg-white shadow-sm rounded-lg border border-gray-200;
+  }
+
+  .card-header {
+    @apply px-6 py-4 border-b border-gray-200 bg-gray-50 rounded-t-lg;
+  }
+
+  .card-body {
+    @apply p-6;
+  }
+
+  .card-footer {
+    @apply px-6 py-4 border-t border-gray-200 bg-gray-50 rounded-b-lg;
+  }
+}
+
+/* Utility classes */
+@layer utilities {
+  /* Scrollbar styling */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: theme(colors.gray.400) theme(colors.gray.200);
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: theme(colors.gray.200);
+    border-radius: 3px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: theme(colors.gray.400);
+    border-radius: 3px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: theme(colors.gray.500);
+  }
+
+  /* Animation utilities */
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}

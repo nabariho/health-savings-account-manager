@@ -1,0 +1,154 @@
+# Health Savings Account (HSA) Frequently Asked Questions
+
+## Eligibility Requirements
+
+### What are the basic eligibility requirements for an HSA?
+To be eligible for an HSA, you must:
+- Be covered under a high-deductible health plan (HDHP)
+- Have no other health coverage (with some exceptions)
+- Not be enrolled in Medicare
+- Not be claimed as a dependent on someone else's tax return
+- Be 18 years or older
+
+### What qualifies as a High-Deductible Health Plan (HDHP)?
+For 2024, an HDHP has:
+- Minimum deductible of $1,600 for self-only coverage
+- Minimum deductible of $3,200 for family coverage
+- Maximum out-of-pocket expenses of $8,050 for self-only coverage
+- Maximum out-of-pocket expenses of $16,100 for family coverage
+
+### Can I have an HSA if I have other health insurance?
+Generally, no. You cannot have an HSA if you have other health coverage, including:
+- Spouse's health plan that covers you
+- Medicare
+- Medicaid
+- TRICARE
+- Healthcare flexible spending account (FSA)
+
+However, some exceptions apply for limited coverage like dental, vision, or accident insurance.
+
+## Contribution Limits and Rules
+
+### What are the HSA contribution limits for 2024?
+For 2024:
+- Self-only coverage: $4,150
+- Family coverage: $8,300
+- Additional catch-up contribution for age 55+: $1,000
+
+### When can I contribute to my HSA?
+You can contribute to your HSA:
+- From January 1st through April 15th of the following year (for the previous tax year)
+- Monthly throughout the year
+- As a lump sum
+
+### Who can contribute to my HSA?
+Contributions can be made by:
+- You (the account holder)
+- Your employer
+- Family members
+- Anyone else on your behalf
+
+Total contributions from all sources cannot exceed annual limits.
+
+## Qualified Medical Expenses
+
+### What expenses are HSA-eligible?
+HSA funds can be used tax-free for qualified medical expenses, including:
+- Doctor visits and medical services
+- Prescription medications
+- Dental and vision care
+- Medical equipment and supplies
+- Mental health services
+- Preventive care
+- Some over-the-counter medications (with prescription)
+
+### What expenses are NOT HSA-eligible?
+Non-qualified expenses include:
+- Cosmetic procedures (unless medically necessary)
+- General health and wellness items
+- Insurance premiums (with some exceptions)
+- Over-the-counter medications without prescription
+- Nutritional supplements
+
+### Can I use HSA funds for family members?
+Yes, you can use HSA funds for qualified medical expenses of:
+- Your spouse
+- Your tax dependents
+- Children under age 27 (even if not tax dependents)
+
+## Account Management
+
+### Do HSA funds expire?
+No, HSA funds never expire. Unlike FSAs, there is no "use it or lose it" rule.
+
+### Can I invest my HSA funds?
+Yes, most HSA providers offer investment options once you reach a minimum balance (typically $1,000-$2,000).
+
+### What happens to my HSA if I change jobs?
+Your HSA is portable and stays with you. You can:
+- Continue using the same account
+- Transfer funds to a new HSA provider
+- Stop contributing if no longer eligible
+
+### What happens to my HSA at age 65?
+At age 65:
+- You can no longer contribute to your HSA
+- You can still use funds for qualified medical expenses tax-free
+- Non-medical withdrawals are subject to income tax (but no penalty)
+
+## Tax Benefits
+
+### What are the tax advantages of an HSA?
+HSAs offer triple tax advantages:
+1. Tax deduction for contributions
+2. Tax-free growth of funds
+3. Tax-free withdrawals for qualified medical expenses
+
+### How do I report HSA contributions and distributions on my taxes?
+Use IRS Form 8889 to report:
+- HSA contributions
+- HSA distributions
+- Excess contributions (if applicable)
+
+### Are there penalties for non-qualified withdrawals?
+Yes, non-qualified withdrawals before age 65 are subject to:
+- Income tax on the withdrawal amount
+- Additional 20% penalty tax
+
+## Documentation and Record Keeping
+
+### What records should I keep for my HSA?
+Maintain records of:
+- All medical receipts and invoices
+- HSA contribution records
+- HSA distribution statements
+- Investment statements
+- IRS Form 8889 filings
+
+The IRS recommends keeping these records for at least 7 years.
+
+### Do I need to submit receipts to my HSA provider?
+Most HSA providers do not require receipt submission, but you must:
+- Keep all receipts for your records
+- Be able to prove expenses were qualified if audited
+- Report distributions on your tax return
+
+## Common Scenarios
+
+### Can I reimburse myself for past medical expenses?
+Yes, you can reimburse yourself for qualified medical expenses incurred after your HSA was established, even years later, as long as you have proper documentation.
+
+### What if I accidentally use my HSA card for non-qualified expenses?
+You must:
+1. Correct the mistake by returning the funds to your HSA, or
+2. Include the amount as taxable income and pay the 20% penalty (if under 65)
+
+### Can I contribute to an HSA if I'm self-employed?
+Yes, self-employed individuals can contribute to an HSA if they have qualifying HDHP coverage.
+
+### What happens if I contribute too much to my HSA?
+Excess contributions are subject to:
+- 6% excise tax for each year the excess remains
+- Must be withdrawn or carried forward to the next year
+
+Contact your HSA provider to correct excess contributions.
