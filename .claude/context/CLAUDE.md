@@ -15,3 +15,4 @@ This repository’s product contract and implementation rules must always be con
 - Never read `.env*` or `secrets/**`; treat secrets as environment variables only.
 
 @.claude/context/engineering.md
+@.claude/context/openai-model.md
