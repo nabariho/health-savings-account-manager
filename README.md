@@ -122,9 +122,26 @@ docker compose exec database pg_isready -U hsa_user
 
 ---
 
+## 📚 Documentation
+
+### Infrastructure & Setup
+- **[docs/infrastructure/](./docs/infrastructure/)** - Complete infrastructure documentation
+  - [OpenAI Setup Guide](./docs/infrastructure/OPENAI_SETUP.md) - HSA Assistant configuration
+  - [Test Analysis Report](./docs/infrastructure/TEST_ANALYSIS_REPORT.md) - Testing coverage and metrics
+  - [Infrastructure Overview](./docs/infrastructure/README.md) - Complete setup and troubleshooting guide
+
+### Architecture & Features  
+- **[ARCHITECTURE.md](./ARCHITECTURE.md)** - System architecture and design decisions
+- **[docs/features/hsa_user_stories.md](./docs/features/hsa_user_stories.md)** - User stories and requirements
+- **[PROJECT_ROADMAP.md](./PROJECT_ROADMAP.md)** - Development progress and activity log
+
+---
+
 ## Manual Setup (Alternative)
 If you prefer running services locally instead of Docker:
 
 1) Copy .env.example to .env and fill in OPENAI_API_KEY
 2) Ensure Python 3.10+ and Node 18+ are available
 3) Install and configure PostgreSQL and Redis locally
+
+**For detailed setup instructions, see [docs/infrastructure/](./docs/infrastructure/)**

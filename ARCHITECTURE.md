@@ -279,6 +279,49 @@ class ValidationType(str, Enum):
     DOCUMENT_QUALITY = "document_quality"
 ```
 
+### QA Service API Contracts (Implemented)
+
+```
+POST /api/v1/qa/ask
+- Process HSA questions with RAG
+- Request: QARequest (question, context, application_id)
+- Response: QAResponse (answer, confidence_score, citations, source_documents)
+- Status: ✅ IMPLEMENTED
+
+GET /api/v1/qa/history/{application_id}
+- Get Q&A history for application
+- Response: List[QAHistoryItem]
+- Status: 🔄 STUB (requires database schema)
+
+POST /api/v1/qa/search
+- Direct vector similarity search
+- Request: VectorSearchRequest (query, k, threshold, filter_documents)
+- Response: List[VectorSearchResult]
+- Status: ✅ IMPLEMENTED
+
+GET /api/v1/qa/stats
+- Knowledge base statistics
+- Response: KnowledgeBaseStats
+- Status: ✅ IMPLEMENTED
+
+GET /api/v1/qa/metrics
+- RAG system performance metrics
+- Response: RAGMetrics
+- Status: ✅ IMPLEMENTED
+
+POST /api/v1/qa/rebuild
+- Rebuild knowledge base (admin)
+- Status: ✅ IMPLEMENTED
+
+GET /api/v1/qa/health
+- QA service health check
+- Status: ✅ IMPLEMENTED
+
+GET /api/v1/qa/examples
+- Get example questions
+- Status: ✅ IMPLEMENTED
+```
+
 ## REST API Contracts
 
 ### Application Management
@@ -350,6 +393,30 @@ GET /api/v1/decisions/audit/{application_id}
 - Response: AuditTrail
 ```
 
+### Knowledge Base Management
+
+The QA service implements comprehensive knowledge base management:
+
+**Document Processing**:
+- Automatic chunking with semantic boundaries (1000 chars, 200 overlap)
+- Vector embeddings using `text-embedding-3-large`
+- Metadata tracking for citations and source attribution
+
+**Vector Search Implementation**:
+- In-memory vector store using cosine similarity
+- Configurable similarity thresholds (default 0.7)
+- Support for document filtering and ranking
+
+**Response Generation**:
+- GPT-4o-mini with structured prompts for accuracy
+- Citation extraction and relevance scoring
+- Confidence calculation based on search quality
+
+**Performance Monitoring**:
+- Query count and response time tracking
+- Confidence score distribution analysis
+- Citation rate and knowledge coverage metrics
+
 ## Specialized Services
 
 ### OCR/Vision Service (OpenAI GPT-4o Integration)
@@ -405,9 +472,23 @@ class DocumentProcessor:
         return GovernmentIdData.model_validate(extracted_data)
 ```
 
-### QA Service (OpenAI Assistants API)
+### QA Service (RAG Implementation)
+
+The QA service has been implemented using a hybrid approach that combines custom RAG with OpenAI APIs:
+
+**Current Implementation**: Custom RAG with in-memory vector store (prototype)
+**Production Path**: Migrate to OpenAI Assistants API with Vector Store
 
 ```python
+class RAGService:
+    def __init__(self, knowledge_base_path: str = "data/knowledge_base"):
+        self.openai_client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        self.embedding_model = "text-embedding-3-large"
+        self.response_model = "gpt-4o-mini-2024-07-18"
+        self.vector_store = VectorStore()  # Custom implementation
+        self.chunker = DocumentChunker()
+        
+# Migration to OpenAI Assistants API (Future Enhancement)
 class OpenAIQAService:
     def __init__(self, openai_client: OpenAI):
         self.openai_client = openai_client

@@ -15,11 +15,13 @@ import uvicorn
 
 from .core.config import settings
 from .core.database import engine, Base
+# Import models to register them with SQLAlchemy
+from .models import Application, Document, HSAAssistantHistory
 # Temporarily commented out to fix containerization
 # from .api.v1.applications import router as applications_router
 # from .api.v1.documents import router as documents_router  
 # from .api.v1.decisions import router as decisions_router
-# from .api.v1.qa import router as qa_router
+from .api.v1.hsa_assistant import router as hsa_assistant_router
 
 
 @asynccontextmanager
@@ -129,7 +131,7 @@ async def detailed_health_check():
 # app.include_router(applications_router, prefix="/api/v1")
 # app.include_router(documents_router, prefix="/api/v1")
 # app.include_router(decisions_router, prefix="/api/v1")
-# app.include_router(qa_router, prefix="/api/v1")
+app.include_router(hsa_assistant_router, prefix="/api/v1")
 
 
 # Root endpoint

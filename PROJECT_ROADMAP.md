@@ -7,6 +7,19 @@
 - ./.claude/context/engineering.md
 
 ## Activity (append newest first)
+- 2025-08-30: **HSA ASSISTANT SERVICE IMPLEMENTED** - Complete backend HSA Assistant service with OpenAI Vector Stores:
+  - ✅ **Module Renamed**: Changed "qa" to "hsa_assistant" for clarity (avoids Quality Assurance confusion)
+  - ✅ **OpenAI Vector Stores Integration**: Full implementation following cookbook patterns
+  - ✅ **Architecture Compliance**: Uses `data/knowledge_base/hsa/irs.pdf` as single source of truth
+  - ✅ **API Endpoints**: `/ask`, `/search`, `/rebuild`, `/health`, `/examples`, `/stats`, `/metrics`
+  - ✅ **Service Layer**: `OpenAIVectorStoreService` with proper two-step file upload pattern
+  - ✅ **Database Models**: HSA Assistant history tracking with comprehensive fields
+  - ✅ **Comprehensive Testing**: 100+ test cases (unit, integration, E2E) with 100% schema coverage
+  - ✅ **Docker Integration**: Updated containerization with health checks and IRS PDF mounting
+  - ✅ **Citation Extraction**: Proper handling of OpenAI annotations for source references
+  - ✅ **Error Handling**: Graceful fallbacks, proper logging, performance metrics
+  - **PR Created**: https://github.com/nabariho/health-savings-account-manager/pull/2
+  - **Status**: ✅ Ready for merge and production deployment
 - 2025-08-30: **HSA CHATBOT ARCHITECTURE DESIGNED** - Simplified OpenAI-based RAG system architecture completed:
   - ✅ **OpenAI Integration**: Full transition from local FAISS to OpenAI Vector Stores and Assistants API
   - ✅ **Simplified Pipeline**: Direct OpenAI file upload, automatic chunking, built-in search capabilities

@@ -1,8 +1,8 @@
 """
-Q&A system schemas for HSA knowledge base queries.
+HSA Assistant system schemas for HSA knowledge base queries.
 
-This module defines Pydantic models for the RAG-powered Q&A system,
-providing validation, serialization, and documentation for Q&A APIs.
+This module defines Pydantic models for the RAG-powered HSA Assistant system,
+providing validation, serialization, and documentation for HSA Assistant APIs.
 """
 
 from datetime import datetime
