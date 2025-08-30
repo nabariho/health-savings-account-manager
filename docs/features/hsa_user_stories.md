@@ -31,7 +31,7 @@ The stories build on the architecture defined in `ARCHITECTURE.md` and the exist
 
 ---
 
-## 2. Implement backend QA service (RAG) **Status:** TODO
+## 2. Implement backend HSA Assistant service (RAG) **Status:** DONE
 
 **Prerequisites**
 - Chatbot architecture document from Story 1.
