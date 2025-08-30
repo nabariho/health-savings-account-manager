@@ -16,3 +16,4 @@ This repository’s product contract and implementation rules must always be con
 
 @.claude/context/engineering.md
 @.claude/context/openai-model.md
+@docs/features/hsa_user_stories.md

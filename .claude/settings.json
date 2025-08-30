@@ -4,7 +4,7 @@
     "allow": [
       "Read(**)", "LS", "Grep", "Glob",
       "Edit", "MultiEdit", "Write",
-      "Bash(npm run *)", "Bash(pnpm *)", "Bash(yarn *)",
+      "Bash(git *), Bash(gh *), Bash(npm run *)", "Bash(pnpm *)", "Bash(yarn *)",
       "Bash(pip *)", "Bash(uv *)", "Bash(pytest *)",
       "Bash(docker build:*)", "Bash(docker compose:*)",
       "WebFetch", "WebSearch"
