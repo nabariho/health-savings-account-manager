@@ -7,15 +7,17 @@
 - ./.claude/context/engineering.md
 
 ## Activity (append newest first)
-- 2025-08-30: **HSA CHATBOT ARCHITECTURE DESIGNED** - Comprehensive RAG system architecture completed:
-  - ✅ **RAG Pipeline Design**: Text-embedding-3-large for embeddings, FAISS for vector search, GPT-4o-mini for responses
-  - ✅ **API Specifications**: POST /qa/query for questions, POST /qa/ingest for knowledge base updates, streaming support
+- 2025-08-30: **HSA CHATBOT ARCHITECTURE DESIGNED** - Simplified OpenAI-based RAG system architecture completed:
+  - ✅ **OpenAI Integration**: Full transition from local FAISS to OpenAI Vector Stores and Assistants API
+  - ✅ **Simplified Pipeline**: Direct OpenAI file upload, automatic chunking, built-in search capabilities
+  - ✅ **API Specifications**: POST /qa/query for questions, POST /qa/ingest for document uploads, streaming support  
   - ✅ **Frontend Architecture**: Chat component with citations, CTA integration, session management, error handling
-  - ✅ **Knowledge Base Strategy**: IRS PDF ingestion with intelligent chunking (1024 tokens + 128 overlap)
-  - ✅ **Performance Optimizations**: Response caching, vector store optimization, similarity thresholds
+  - ✅ **Knowledge Base Strategy**: Direct IRS PDF upload to OpenAI with automatic optimization
+  - ✅ **Performance Optimizations**: Response caching with Redis, OpenAI-optimized vector search
   - ✅ **Security Measures**: Input sanitization, rate limiting, prompt injection prevention
-  - ✅ **Documentation Created**: `/docs/architecture/hsa_chat_bot_architecture.md` with complete implementation details
+  - ✅ **Documentation Updated**: `/docs/architecture/hsa_chat_bot_architecture.md` with OpenAI-first implementation
   - ✅ **Integration Points**: Application state management, CTA trigger logic, confidence scoring
+  - ✅ **Architecture Revision**: ARCHITECTURE.md updated to reflect OpenAI Assistants approach
   - **Status**: Ready for backend implementation (Story #2: Implement backend QA service)
 - 2025-08-29: **DOCKER CONTAINERIZATION COMPLETED** - Full production-ready containerization:
   - ✅ **Multi-stage Dockerfiles**: Backend (Python 3.11-slim) and Frontend (nginx alpine) with non-root security

@@ -11,24 +11,26 @@ This document defines the technical architecture for the HSA FAQ chatbot system 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   Frontend      │    │   Backend       │    │   OpenAI APIs   │
-│   Chat UI       │◄──►│   QA Service    │◄──►│   GPT-4o-mini   │
-│   React/TS      │    │   Python        │    │   Embeddings    │
+│   Chat UI       │◄──►│   QA Service    │◄──►│   Assistants    │
+│   React/TS      │    │   Python        │    │   Vector Stores │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
                               │
                               ▼
-┌─────────────────┬─────────────────┬─────────────────┐
-│  Vector Store   │  Document       │  Citation       │
-│  FAISS/SQLite   │  Processor      │  Handler        │
-└─────────────────┴─────────────────┴─────────────────┘
+         ┌─────────────────────────────────────┐
+         │     OpenAI Vector Store             │
+         │  • File Upload & Processing         │
+         │  • Automatic Chunking               │
+         │  • Built-in Search                  │
+         └─────────────────────────────────────┘
 ```
 
 ### Technology Stack
 
 #### Core Components
-- **Embedding Model**: `text-embedding-3-large` (1,536 dimensions)
+- **AI Platform**: OpenAI Assistants API with built-in file search
+- **Vector Store**: OpenAI Vector Stores (managed service)
 - **Response Model**: `gpt-4o-mini-2024-07-18`
-- **Vector Store**: FAISS for prototype, SQLite with pgvector for production
-- **Document Processing**: PDF text extraction with chunk optimization
+- **Document Processing**: Native OpenAI file processing
 - **Backend Framework**: FastAPI with async/await patterns
 - **Frontend Framework**: React 18 with TypeScript
 
@@ -36,230 +38,228 @@ This document defines the technical architecture for the HSA FAQ chatbot system 
 
 ### 1. Knowledge Base Construction
 
-#### Document Ingestion Pipeline
+#### Document Ingestion with OpenAI Vector Stores
 
 ```python
-class KnowledgeBaseBuilder:
-    """Handles ingestion and vectorization of HSA documentation"""
+class OpenAIKnowledgeBaseBuilder:
+    """Handles document upload to OpenAI Vector Stores"""
     
-    async def ingest_documents(self, document_paths: List[str]) -> None:
+    async def ingest_documents(self, document_paths: List[str]) -> str:
         """
-        Process HSA documents into searchable vector embeddings
+        Upload HSA documents to OpenAI Vector Store
         
-        Pipeline:
-        1. Extract text from PDF documents
-        2. Split into optimized chunks (512-1024 tokens)
-        3. Generate embeddings using text-embedding-3-large
-        4. Store in vector database with metadata
+        Simplified Pipeline:
+        1. Create/update vector store
+        2. Upload PDF documents directly to OpenAI
+        3. OpenAI handles chunking, embedding, and indexing automatically
         """
+        # Create or retrieve vector store
+        vector_store = await self.openai_client.beta.vector_stores.create(
+            name="hsa_knowledge_base",
+            expires_after={
+                "anchor": "last_active_at",
+                "days": 365
+            }
+        )
+        
+        # Upload documents
+        file_ids = []
         for doc_path in document_paths:
-            # Extract text preserving structure
-            document = await self._extract_pdf_text(doc_path)
-            
-            # Intelligent chunking with overlap
-            chunks = await self._create_smart_chunks(
-                text=document.text,
-                chunk_size=1024,
-                overlap=128,
-                preserve_structure=True
-            )
-            
-            # Generate embeddings for each chunk
-            for chunk in chunks:
-                embedding = await self.openai_client.embeddings.create(
-                    model="text-embedding-3-large",
-                    input=chunk.text,
-                    encoding_format="float"
+            # Upload file to OpenAI
+            with open(doc_path, 'rb') as file:
+                uploaded_file = await self.openai_client.files.create(
+                    file=file,
+                    purpose="assistants"
                 )
-                
-                # Store with rich metadata
-                await self.vector_store.store(
-                    id=chunk.id,
-                    embedding=embedding.data[0].embedding,
-                    metadata={
-                        "document": doc_path,
-                        "page_number": chunk.page,
-                        "section": chunk.section,
-                        "text": chunk.text,
-                        "tokens": chunk.token_count,
-                        "created_at": datetime.utcnow()
-                    }
-                )
+                file_ids.append(uploaded_file.id)
+        
+        # Add files to vector store
+        await self.openai_client.beta.vector_stores.file_batches.create(
+            vector_store_id=vector_store.id,
+            file_ids=file_ids
+        )
+        
+        return vector_store.id
 ```
 
-#### Chunking Strategy
+#### Chunking Strategy (Handled by OpenAI)
 
 ```python
-class SmartChunker:
-    """Intelligent document chunking preserving semantic boundaries"""
+class OpenAIChunkingStrategy:
+    """OpenAI Vector Stores handle chunking automatically"""
     
-    def create_chunks(self, text: str, chunk_size: int = 1024) -> List[TextChunk]:
+    def __init__(self):
         """
-        Create chunks optimized for HSA content:
-        - Preserve section headers and numbered lists
-        - Maintain sentence boundaries
-        - Include contextual overlap
-        - Optimize for embedding model token limits
+        OpenAI automatically handles:
+        - Optimal chunk sizing for embeddings
+        - Semantic boundary preservation
+        - Overlap strategy for context
+        - Document structure recognition
+        
+        No manual chunking required - OpenAI optimizes for:
+        - text-embedding-3-large model
+        - Maximum retrieval quality
+        - Automatic metadata extraction
         """
-        # Preserve HSA-specific structure
-        sections = self._identify_hsa_sections(text)
-        chunks = []
-        
-        for section in sections:
-            # Split long sections while preserving context
-            section_chunks = self._split_section_preserving_context(
-                section, chunk_size
-            )
-            chunks.extend(section_chunks)
-        
-        return chunks
+        self.chunk_info = {
+            "strategy": "automatic",
+            "provider": "openai",
+            "optimization": "retrieval_quality",
+            "note": "Chunking handled by OpenAI Vector Stores"
+        }
 ```
 
-### 2. Query Processing Pipeline
+### 2. Query Processing with OpenAI Assistants
 
-#### Question Analysis and Embedding
+#### Simplified Question Processing
 
 ```python
-class QueryProcessor:
-    """Handles user questions and retrieval logic"""
+class OpenAIQueryProcessor:
+    """Handles user questions via OpenAI Assistants API"""
     
     async def process_query(self, question: str, context: str = None) -> RAGResponse:
         """
-        Full RAG pipeline for question answering:
-        1. Preprocess and validate user question
-        2. Generate query embedding
-        3. Retrieve relevant document chunks
-        4. Generate contextualized response
-        5. Extract citations and confidence scores
+        Simplified RAG pipeline using OpenAI Assistants:
+        1. Create thread for conversation
+        2. Send message with question
+        3. Run assistant with file search enabled
+        4. Extract response and citations
         """
-        # Preprocess question
-        processed_question = await self._preprocess_question(question)
+        # Create conversation thread
+        thread = await self.openai_client.beta.threads.create()
         
-        # Generate embedding for similarity search
-        question_embedding = await self.openai_client.embeddings.create(
-            model="text-embedding-3-large",
-            input=processed_question,
-            encoding_format="float"
+        # Add user message
+        await self.openai_client.beta.threads.messages.create(
+            thread_id=thread.id,
+            role="user",
+            content=question
         )
         
-        # Retrieve relevant chunks
-        relevant_chunks = await self._retrieve_relevant_chunks(
-            embedding=question_embedding.data[0].embedding,
-            k=5,
-            similarity_threshold=0.75
+        # Run assistant with file search
+        run = await self.openai_client.beta.threads.runs.create(
+            thread_id=thread.id,
+            assistant_id=self.assistant_id,
+            tools=[{"type": "file_search"}]
         )
         
-        # Generate response with citations
-        return await self._generate_response(processed_question, relevant_chunks)
+        # Wait for completion and get response
+        run = await self._wait_for_completion(run)
+        messages = await self.openai_client.beta.threads.messages.list(
+            thread_id=thread.id
+        )
+        
+        # Extract response and citations
+        return await self._extract_response_with_citations(messages)
 ```
 
-#### Similarity Search and Retrieval
+#### Assistant Configuration
 
 ```python
-class VectorStore:
-    """Vector similarity search with FAISS backend"""
+class OpenAIAssistantManager:
+    """Manages HSA Assistant configuration"""
     
-    async def similarity_search(
-        self, 
-        query_embedding: List[float], 
-        k: int = 5,
-        similarity_threshold: float = 0.7
-    ) -> List[RetrievedChunk]:
+    async def create_hsa_assistant(self, vector_store_id: str) -> str:
         """
-        Efficient similarity search with filtering:
-        - Cosine similarity with FAISS index
-        - Threshold-based filtering
-        - Diversity ranking to avoid redundant results
-        - Metadata-enriched results
+        Create specialized HSA assistant with file search:
+        - Connects to HSA knowledge base vector store
+        - Optimized instructions for HSA domain
+        - Built-in search and citation capabilities
         """
-        # Perform vector similarity search
-        similarities, indices = self.faiss_index.search(
-            np.array([query_embedding]), k * 2  # Over-retrieve for diversity
+        assistant = await self.openai_client.beta.assistants.create(
+            name="HSA Expert Assistant",
+            instructions="""You are an expert HSA advisor with access to official IRS documentation.
+            
+            Guidelines:
+            - Provide accurate HSA information based solely on the uploaded documents
+            - Include specific citations from IRS publications
+            - Use clear, accessible language for financial concepts
+            - Acknowledge limitations when information is insufficient
+            - Emphasize important deadlines and requirements
+            - Always cite the specific document and section for your answers
+            """,
+            model="gpt-4o-mini-2024-07-18",
+            tools=[{"type": "file_search"}],
+            tool_resources={
+                "file_search": {
+                    "vector_store_ids": [vector_store_id]
+                }
+            }
         )
         
-        # Filter by threshold and diversify
-        filtered_results = []
-        for similarity, idx in zip(similarities[0], indices[0]):
-            if similarity >= similarity_threshold:
-                chunk = await self._get_chunk_by_index(idx)
-                filtered_results.append(RetrievedChunk(
-                    chunk=chunk,
-                    similarity=similarity,
-                    rank=len(filtered_results)
-                ))
-        
-        # Apply diversity ranking
-        diverse_results = self._apply_diversity_ranking(filtered_results, k)
-        return diverse_results
+        return assistant.id
 ```
 
-### 3. Response Generation
+### 3. Response Generation with Built-in Citations
 
-#### Context Preparation and Prompt Engineering
+#### OpenAI Assistant Response Processing
 
 ```python
-class ResponseGenerator:
-    """Generate contextually accurate responses with citations"""
+class OpenAIResponseProcessor:
+    """Process responses from OpenAI Assistants with automatic citations"""
     
-    async def generate_response(
+    async def extract_response_with_citations(
         self, 
-        question: str, 
-        retrieved_chunks: List[RetrievedChunk]
+        messages: List[Message]
     ) -> RAGResponse:
         """
-        Generate response using retrieved context:
-        1. Prepare context from retrieved chunks
-        2. Engineer prompt for HSA domain
-        3. Generate response with GPT-4o-mini
-        4. Extract citations and confidence metrics
+        Extract response and citations from OpenAI Assistant:
+        1. Get latest assistant message
+        2. Extract text content and file citations
+        3. Process citation annotations
+        4. Calculate confidence based on citation quality
         """
-        if not retrieved_chunks:
-            return self._generate_no_answer_response()
-        
-        # Prepare context with proper attribution
-        context = self._prepare_context(retrieved_chunks)
-        
-        # HSA-specific prompt engineering
-        system_prompt = """
-        You are an expert HSA advisor providing accurate information based solely on official IRS documentation.
-        
-        Guidelines:
-        - Answer only based on the provided context
-        - Include specific citations to document sections
-        - If information is insufficient, acknowledge limitations
-        - Use clear, accessible language for financial concepts
-        - Emphasize important deadlines and requirements
-        """
-        
-        user_prompt = f"""
-        Based on the following HSA documentation context, answer this question: {question}
-        
-        Context:
-        {context}
-        
-        Please provide a clear, accurate answer with citations to the specific document sections used.
-        If the context doesn't contain sufficient information, clearly state this limitation.
-        """
-        
-        response = await self.openai_client.chat.completions.create(
-            model="gpt-4o-mini-2024-07-18",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ],
-            temperature=0.1,  # Low temperature for consistency
-            max_tokens=1000
+        # Get the latest assistant message
+        assistant_message = next(
+            msg for msg in reversed(messages.data) 
+            if msg.role == "assistant"
         )
         
-        # Extract citations and calculate confidence
-        citations = self._extract_citations(retrieved_chunks)
-        confidence = self._calculate_confidence(retrieved_chunks, response)
+        # Extract text content
+        text_content = next(
+            content for content in assistant_message.content
+            if content.type == "text"
+        )
+        
+        answer = text_content.text.value
+        
+        # Process citations from annotations
+        citations = []
+        if text_content.text.annotations:
+            for annotation in text_content.text.annotations:
+                if annotation.type == "file_citation":
+                    citation = await self._process_file_citation(annotation)
+                    citations.append(citation)
+        
+        # Calculate confidence based on citation quality
+        confidence = self._calculate_confidence_from_citations(citations)
+        
+        # Extract unique source documents
+        source_documents = list(set(
+            citation.document_name for citation in citations
+        ))
         
         return RAGResponse(
-            answer=response.choices[0].message.content,
+            answer=answer,
             confidence_score=confidence,
             citations=citations,
-            source_documents=list(set(chunk.metadata['document'] for chunk in retrieved_chunks))
+            source_documents=source_documents
+        )
+    
+    async def _process_file_citation(self, annotation) -> Citation:
+        """Convert OpenAI file citation to our Citation format"""
+        file_citation = annotation.file_citation
+        
+        # Get file details
+        file_details = await self.openai_client.files.retrieve(
+            file_citation.file_id
+        )
+        
+        return Citation(
+            document_name=file_details.filename,
+            page_number=None,  # OpenAI doesn't provide page numbers
+            section=None,      # Extract from quote if available
+            excerpt=file_citation.quote or "",
+            confidence=0.9     # High confidence for OpenAI citations
         )
 ```
 
@@ -303,17 +303,17 @@ class Citation(BaseModel):
 @router.post("/query", response_model=QAQueryResponse)
 async def process_qa_query(
     request: QAQueryRequest,
-    rag_service: RAGService = Depends(get_rag_service),
+    assistant_service: OpenAIAssistantService = Depends(get_assistant_service),
     session_service: SessionService = Depends(get_session_service)
 ) -> QAQueryResponse:
-    """Process user question with RAG pipeline"""
+    """Process user question with OpenAI Assistant"""
     
     # Track session for conversation context
     session_id = request.session_id or await session_service.create_session()
     
-    # Process with RAG pipeline
+    # Process with OpenAI Assistant
     start_time = time.time()
-    rag_response = await rag_service.answer_question(
+    assistant_response = await assistant_service.ask_question(
         question=request.question,
         context=request.context,
         session_id=session_id
@@ -324,15 +324,15 @@ async def process_qa_query(
     await session_service.log_interaction(
         session_id=session_id,
         question=request.question,
-        response=rag_response,
+        response=assistant_response,
         processing_time=processing_time
     )
     
     return QAQueryResponse(
-        answer=rag_response.answer,
-        confidence_score=rag_response.confidence_score,
-        citations=rag_response.citations,
-        source_documents=rag_response.source_documents,
+        answer=assistant_response.answer,
+        confidence_score=assistant_response.confidence_score,
+        citations=assistant_response.citations,
+        source_documents=assistant_response.source_documents,
         session_id=session_id,
         response_time_ms=processing_time
     )
@@ -340,14 +340,14 @@ async def process_qa_query(
 
 #### POST /api/v1/qa/ingest
 
-**Purpose**: Rebuild knowledge base from updated documents (Admin only)
+**Purpose**: Upload documents to OpenAI Vector Store (Admin only)
 
 **Request Schema**:
 ```python
 class IngestRequest(BaseModel):
-    document_paths: List[str] = Field(..., description="Paths to documents to ingest")
-    force_rebuild: bool = Field(False, description="Force complete rebuild")
-    chunk_size: int = Field(1024, ge=256, le=2048, description="Chunk size for processing")
+    document_paths: List[str] = Field(..., description="Paths to documents to upload")
+    force_rebuild: bool = Field(False, description="Force vector store recreation")
+    # chunk_size removed - OpenAI handles chunking automatically
 ```
 
 **Response Schema**:
@@ -718,96 +718,106 @@ const useChatService = () => {
 
 ## Performance Considerations
 
-### Vector Store Optimization
+### OpenAI Vector Store Optimization
 
 ```python
-class OptimizedVectorStore:
-    """High-performance vector store with caching and indexing"""
+class OpenAIVectorStoreOptimization:
+    """Optimization strategies for OpenAI Vector Stores"""
     
     def __init__(self):
-        self.faiss_index = self._build_optimized_index()
-        self.cache = LRUCache(maxsize=1000)
-        self.index_metadata = {}
+        self.response_cache = LRUCache(maxsize=1000)
+        self.vector_store_cache = {}
     
-    def _build_optimized_index(self) -> faiss.Index:
-        """Build FAISS index optimized for HSA content"""
-        # Use IVF (Inverted File) with PQ (Product Quantization) for large datasets
-        quantizer = faiss.IndexFlatL2(1536)  # text-embedding-3-large dimension
-        index = faiss.IndexIVFPQ(quantizer, 1536, 100, 8, 8)  # 100 clusters, 8-bit PQ
+    async def optimized_search(self, question: str, assistant_id: str) -> RAGResponse:
+        """Optimized search with response caching"""
         
-        # Train index if needed
-        if self._needs_training():
-            training_data = self._get_training_embeddings()
-            index.train(training_data)
+        # Check response cache first
+        cache_key = self._generate_cache_key(question)
+        if cache_key in self.response_cache:
+            return self.response_cache[cache_key]
         
-        return index
+        # Use OpenAI's optimized search
+        response = await self._query_assistant(question, assistant_id)
+        
+        # Cache successful responses
+        if response.confidence_score > 0.7:
+            self.response_cache[cache_key] = response
+        
+        return response
     
-    async def similarity_search_optimized(
-        self,
-        query_embedding: np.ndarray,
-        k: int = 5
-    ) -> List[RetrievedChunk]:
-        """Optimized search with caching and pre-filtering"""
+    def _generate_cache_key(self, question: str) -> str:
+        """Generate cache key for semantically similar questions"""
+        # Normalize question for better cache hits
+        normalized = question.lower().strip()
+        normalized = re.sub(r'[^\w\s]', '', normalized)
+        normalized = re.sub(r'\s+', ' ', normalized)
+        return hashlib.md5(normalized.encode()).hexdigest()
+    
+    async def get_vector_store_status(self, vector_store_id: str) -> dict:
+        """Monitor vector store performance metrics"""
+        vector_store = await self.openai_client.beta.vector_stores.retrieve(
+            vector_store_id
+        )
         
-        # Check cache first
-        cache_key = hashlib.md5(query_embedding.tobytes()).hexdigest()
-        if cache_key in self.cache:
-            return self.cache[cache_key]
-        
-        # Perform search with optimized parameters
-        self.faiss_index.nprobe = 20  # Search 20 clusters
-        similarities, indices = self.faiss_index.search(query_embedding, k * 2)
-        
-        # Post-process and cache results
-        results = await self._process_search_results(similarities[0], indices[0], k)
-        self.cache[cache_key] = results
-        
-        return results
+        return {
+            "status": vector_store.status,
+            "file_counts": vector_store.file_counts,
+            "usage_bytes": vector_store.usage_bytes,
+            "last_active_at": vector_store.last_active_at,
+            "expires_after": vector_store.expires_after
+        }
 ```
 
-### Response Caching Strategy
+### Response Caching with Redis
 
 ```python
-class ResponseCache:
-    """Intelligent caching for common HSA questions"""
+class OpenAIResponseCache:
+    """Intelligent caching for OpenAI Assistant responses"""
     
     def __init__(self, redis_client: Redis):
         self.redis = redis_client
         self.ttl = 3600 * 24  # 24 hour cache
     
     async def get_cached_response(self, question: str) -> Optional[QAQueryResponse]:
-        """Get cached response for semantically similar questions"""
+        """Get cached response using question similarity"""
         
-        # Generate embedding for question
-        question_embedding = await self._embed_question(question)
+        # Normalize question for cache lookup
+        normalized_question = self._normalize_question(question)
+        cache_key = f"qa_cache:{hashlib.md5(normalized_question.encode()).hexdigest()}"
         
-        # Check for semantically similar cached questions
-        similar_questions = await self._find_similar_cached_questions(question_embedding)
-        
-        if similar_questions:
-            # Return highest similarity cached response
-            best_match = max(similar_questions, key=lambda x: x['similarity'])
-            if best_match['similarity'] > 0.95:  # Very high similarity threshold
-                return QAQueryResponse.parse_raw(best_match['response'])
+        cached_data = await self.redis.get(cache_key)
+        if cached_data:
+            cache_entry = json.loads(cached_data)
+            # Check if cache entry is still valid
+            if self._is_cache_valid(cache_entry):
+                return QAQueryResponse.parse_raw(cache_entry['response'])
         
         return None
     
     async def cache_response(self, question: str, response: QAQueryResponse) -> None:
-        """Cache response with semantic indexing"""
-        question_embedding = await self._embed_question(question)
+        """Cache high-quality responses"""
+        # Only cache responses with good confidence
+        if response.confidence_score < 0.6:
+            return
+        
+        normalized_question = self._normalize_question(question)
+        cache_key = f"qa_cache:{hashlib.md5(normalized_question.encode()).hexdigest()}"
         
         cache_entry = {
-            'question': question,
-            'embedding': question_embedding.tolist(),
+            'question': normalized_question,
             'response': response.json(),
-            'cached_at': datetime.utcnow().isoformat()
+            'cached_at': datetime.utcnow().isoformat(),
+            'confidence': response.confidence_score
         }
         
-        await self.redis.setex(
-            f"qa_cache:{hashlib.md5(question.encode()).hexdigest()}",
-            self.ttl,
-            json.dumps(cache_entry)
-        )
+        await self.redis.setex(cache_key, self.ttl, json.dumps(cache_entry))
+    
+    def _normalize_question(self, question: str) -> str:
+        """Normalize question for better cache hits"""
+        normalized = question.lower().strip()
+        normalized = re.sub(r'[^\w\s]', '', normalized)
+        normalized = re.sub(r'\s+', ' ', normalized)
+        return normalized
 ```
 
 ## Security and Privacy Considerations
@@ -995,21 +1005,22 @@ const ApplicationProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 OPENAI_API_KEY=sk-...
 OPENAI_ORG_ID=org-...
 
-# Vector Store Configuration
-VECTOR_STORE_TYPE=faiss  # or 'sqlite' for production
-FAISS_INDEX_PATH=/data/faiss_index
-SQLITE_DB_URL=postgresql://user:pass@localhost:5432/hsa_db
+# OpenAI Services
+OPENAI_ASSISTANT_ID=asst_...
+OPENAI_VECTOR_STORE_ID=vs_...
 
 # Knowledge Base
 KNOWLEDGE_BASE_PATH=/data/knowledge_base
-AUTO_REBUILD_KB=false
-KB_CHUNK_SIZE=1024
-KB_CHUNK_OVERLAP=128
+AUTO_UPLOAD_DOCUMENTS=false
 
 # Performance Tuning
 QA_RESPONSE_CACHE_TTL=3600
 QA_MAX_CONCURRENT_REQUESTS=10
-QA_TIMEOUT_SECONDS=30
+QA_TIMEOUT_SECONDS=60  # OpenAI can take longer
+
+# Redis Cache
+REDIS_URL=redis://localhost:6379
+REDIS_CACHE_PREFIX=hsa_qa
 
 # Monitoring
 PROMETHEUS_METRICS_PORT=9090
@@ -1024,16 +1035,17 @@ STRUCTURED_LOGGING=true
 COPY requirements-qa.txt .
 RUN pip install --no-cache-dir -r requirements-qa.txt
 
-# Install FAISS CPU version
-RUN pip install faiss-cpu
-
-# Create knowledge base directory
-RUN mkdir -p /data/knowledge_base /data/faiss_index
+# Create knowledge base directory for document uploads
+RUN mkdir -p /data/knowledge_base
 COPY data/knowledge_base/ /data/knowledge_base/
 
 # Health check for QA service
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=30s --start-period=10s --retries=3 \
     CMD python -c "import requests; requests.get('http://localhost:8000/api/v1/qa/health')"
+
+# Additional environment for OpenAI services
+ENV OPENAI_API_TIMEOUT=60
+ENV OPENAI_MAX_RETRIES=3
 ```
 
 This architecture provides a robust, scalable foundation for the HSA chatbot system with clear separation of concerns, comprehensive error handling, and production-ready deployment considerations.
