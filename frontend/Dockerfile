@@ -2,6 +2,9 @@
 # Build stage: Install dependencies and build the React application
 FROM node:18-alpine as builder
 
+# Build argument for API URL (can be overridden at build time)
+ARG VITE_API_BASE_URL=http://localhost:8000/api/v1
+
 # Set work directory
 WORKDIR /app
 
@@ -13,6 +16,9 @@ RUN npm ci --silent
 
 # Copy all source code
 COPY . .
+
+# Set environment variable for build
+ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
 
 # Build the application for production (skip TypeScript checking for Docker build)
 RUN ./node_modules/.bin/vite build
