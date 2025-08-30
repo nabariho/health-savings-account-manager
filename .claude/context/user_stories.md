@@ -1,73 +1,169 @@
-# User Stories and Acceptance Criteria
+# HSA Onboarding Project – User Stories
 
-This document outlines the business rationale, user stories, and clear acceptance criteria for each major component of the HSA onboarding prototype.  Use these descriptions as a checklist when implementing your solution.
+This document breaks down the work required to deliver the full HSA onboarding experience into small, self-contained user stories.  
+Each story includes **prerequisites**, **requirements**, and **expected outputs** so Claude subagents can execute them with minimal ambiguity.  
+The stories build on the architecture defined in `ARCHITECTURE.md` and the existing codebase.
 
-### 1. Data Collection
+---
 
-**Business Reason:**  Collecting essential personal information (full name, date of birth, address, Social Security Number, and employer) is necessary to verify identity and determine eligibility for an HSA.  Financial institutions are required by law to gather this data for Know Your Customer (KYC) and Customer Identification Program (CIP) compliance.
+## 1. Design a chatbot architecture for HSA FAQs  **Status:** TODO
 
-**User Story:**  As an HSA onboarding system, I need to prompt the applicant to enter their personal information so that the institution can verify their identity and eligibility in compliance with regulatory requirements.
+**Prerequisites**
+- IRS HSA PDF exists at `data/knowledge_base/hsa/irs.pdf`.
+- `ARCHITECTURE.md` exists with the base system (React/TS frontend, FastAPI backend).
 
-**Acceptance Criteria:**
+**Requirements**
+1. Define a Retrieval-Augmented Generation (RAG) pipeline:
+    - Ingest IRS PDF into a knowledge base (embeddings with `text-embedding-3-large`).
+    - Retrieve passages and call OpenAI Responses API (`gpt-4o-mini`) with context.
+2. Specify endpoints:
+    - `POST /qa/query` → answer questions with citations.
+    - (Optional) `POST /qa/ingest` → rebuild knowledge base.
+3. Decide on vector store/database (FAISS or SQLite for prototype).
+4. Define frontend modules:
+    - Chat component, citation rendering, CTA button.
+5. Handle errors, rate limits, and no-answer cases.
 
-- The system presents input fields for name, date of birth, address, Social Security Number (or simulated ID number), and employer.
-- Each field is mandatory.  Attempts to proceed without filling out a required field trigger a clear error message that identifies the missing information.
-- The date of birth must be validated as a proper date.  The Social Security Number (or ID number) must match the expected format (for example, nine digits for a U.S. SSN).
-- Collected data is stored securely and passed on to the document processing and decisioning modules.
+**Expected Output**
+- `/docs/architecture/hsa_chat_bot_architecture.md` documenting the system.
+- Updates to `ARCHITECTURE.md`.
+- Roadmap entry describing design decisions.
 
-### 2. Document Upload and Processing
+---
 
-**Business Reason:**  Verifying the authenticity of the applicant’s identity and eligibility documents is a critical part of KYC and CIP.  Automated extraction and comparison of document data reduces manual review and deters fraud.
+## 2. Implement backend QA service (RAG) **Status:** TODO
 
-**User Story:**  As the onboarding system, I need to allow users to upload their government ID and proof‑of‑eligibility documents, extract and validate key fields, and determine if they match the user’s provided information so that I can make an informed approval decision.
+**Prerequisites**
+- Chatbot architecture document from Story 1.
+- IRS PDF available for ingestion.
 
-**Acceptance Criteria:**
+**Requirements**
+- Create FastAPI router `backend/api/v1/qa.py`:
+    - `POST /qa/query` → accept question, return streamed answer with citations.
+    - `POST /qa/ingest` → rebuild embeddings.
+- Implement `rag_service.py` with `build_knowledge_base()` and `answer_question()`.
+- Use FAISS or lightweight DB for embeddings.
+- Add tests verifying answers include citations and unknown questions fail gracefully.
 
-- The system accepts uploads of image or PDF files for a government ID and an employer document (proof of eligibility).
-- The system uses OCR or an AI vision model to extract the name, date of birth, address, ID number, and expiry date from the ID document.
-- The system extracts the applicant name and employer name from the employer document.
-- If the ID is expired, the system automatically sets the application status to **Reject**.
-- If the extracted name, date of birth, or address does not exactly match the user‑provided data, the system sets the application status to **Manual Review**.
-- If all extracted data matches and the ID is valid, the system sets the application status to **Approve**.
-- The system gracefully handles unreadable or corrupt files and reports a meaningful error.
+**Expected Output**
+- Functional QA endpoints.
+- RAG service integrated.
+- Passing tests for citation handling and fallbacks.
 
-### 3. RAG‑Powered FAQs
+---
 
-**Business Reason:**  Applicants frequently ask questions about HSAs.  Using retrieval‑augmented generation (RAG) ensures that responses are accurate and grounded in official documentation, improving user trust and reducing calls to support.
+## 3. Implement chatbot UI and CTA **Status:** TODO
 
-**User Story:**  As the onboarding system, I need to answer users’ questions about HSAs by retrieving relevant information from the supplied IRS documents and composing a concise response so that users can understand the rules and benefits without leaving the onboarding process.
+**Prerequisites**
+- Backend QA service is available.
 
-**Acceptance Criteria:**
+**Requirements**
+- Add `ChatPage` component:
+    - Chat history, user input, streaming answers with citations.
+    - “Start Your HSA Application” CTA below chat.
+- Update routing: CTA → personal info page.
+- Update global state to include `qaSession`.
+- Ensure accessibility, loading/error states.
+- Add unit & integration tests.
 
-- The knowledge base is built solely from the provided `HSA_FAQ.txt` and `HSA_Limits.txt` documents.
-- When the user asks a question about HSA eligibility, contributions, qualified expenses, or other rules, the system performs a vector search to retrieve relevant passages from the knowledge base.
-- The retrieved passages are passed to an LLM (e.g. via the OpenAI API) to generate a concise answer.
-- The answer cites the specific document sections (e.g. quotes or paragraph references) used to form the response.
-- If the question cannot be answered based on the provided documents, the system returns a polite message indicating that the information is unavailable in the knowledge base.
+**Expected Output**
+- Functional chat interface with CTA.
+- Navigation from chat → enrollment.
+- Updated roadmap.
 
-### 4. Decisioning and Reporting
+---
 
-**Business Reason:**  Automated decisioning provides consistent, transparent outcomes and reduces the burden on human reviewers.  Logging the reasoning behind each decision ensures accountability and facilitates auditing.
+## 4. Add document upload endpoints and OCR service **Status:** TODO
 
-**User Story:**  As the onboarding system, I need to compute a risk score and determine an application outcome (Approve / Reject / Manual Review) based on collected data and extracted document information, and I need to log the reasoning so that reviewers can audit the decision.
+**Prerequisites**
+- Personal info endpoints exist.
+- Chat + CTA flow implemented.
 
-**Acceptance Criteria:**
+**Requirements**
+- Define `DocumentUpload` model and schema.
+- Create `backend/api/v1/documents.py`:
+    - `POST /documents/upload` → accept files, return task ID.
+    - `GET /documents/{id}` → return processing results.
+- Implement `document_processor.py` using GPT-4o vision for OCR.
+- Store extracted fields in DB.
+- Add validation and tests for file limits and OCR output.
 
-- The system defines a set of rules or a scoring algorithm that evaluates ID validity, data matches, and potential risk factors.  For example, expired ID → reject, mismatched information → manual review, all matches → approve.
-- The system produces exactly one of three outcomes: **Approve**, **Reject**, or **Manual Review**, along with a brief explanation summarising the key factors (e.g. “ID expired” or “Name mismatch between ID and employer document”).
-- The system records the decision, the extracted data, and any mismatches in an audit log or database table.
-- Reviewers can access the audit log to see a detailed breakdown of the decision process for each application.
+**Expected Output**
+- Document upload API.
+- Processor service integrated with GPT-4o vision.
+- Passing tests and updated roadmap.
 
-### 5. Deployment and Packaging
+---
 
-**Business Reason:**  Packaging the system for easy local execution and cloud deployment ensures that developers can reproduce results consistently and the solution can be integrated into production environments.
+## 5. Implement document upload UI **Status:** TODO
 
-**User Story:**  As a developer, I need the onboarding system packaged in a way that it can be executed locally and containerized for deployment so that I can test and deploy it reliably.
+**Prerequisites**
+- Document upload endpoints are working.
 
-**Acceptance Criteria:**
+**Requirements**
+- Create `DocumentUploadPage`:
+    - Upload ID/employer documents with progress bars.
+    - Poll backend for OCR results.
+    - Display extracted fields for confirmation.
+- Add error handling and links back to chat.
+- Add tests for upload workflow.
 
-- The project includes a clear `README` with instructions on how to set up the environment, install dependencies, and run the application locally.
-- A `Dockerfile` (and optionally a `docker-compose.yml`) is provided to build and run the system in a containerised environment.
-- Configuration values such as API keys and database connections are managed via environment variables or configuration files and are not hard‑coded in the source.
-- Running the container starts all necessary services (e.g. the API server and any required databases) and the system behaves as specified in these user stories.
+**Expected Output**
+- Working upload UI.
+- Integrated OCR results display.
+- Navigation from personal info → upload.
 
+---
+
+## 6. Build decision engine endpoints **Status:** TODO
+
+**Prerequisites**
+- Personal info + documents stored in DB.
+
+**Requirements**
+- Implement `decision_engine.py`:
+    - `evaluate_application(application_id)` → apply rules (expired ID → reject, mismatches → manual review, all valid → approve).
+    - Log decisions in audit trail.
+- Add `backend/api/v1/decisions.py` with `GET /decisions/{application_id}`.
+- Add DB models for decisions and logs.
+- Add tests covering all rule branches.
+
+**Expected Output**
+- Decision API with audit logs.
+- Tests proving rule coverage.
+
+---
+
+## 7. Implement decision screen UI **Status:** TODO
+
+**Prerequisites**
+- Decision endpoint is live.
+- Upload page complete.
+
+**Requirements**
+- Create `DecisionPage`:
+    - Fetch decision and display approve/reject/manual review.
+    - Show rationale and timestamp.
+    - Links to restart, return to chat, or contact support.
+- Add tests for each outcome.
+
+**Expected Output**
+- Functional decision UI.
+- End-to-end flow complete.
+
+---
+
+## 8. Ensure memory and roadmap updates **Status:** TODO
+
+**Requirements**
+- At end of each story:
+    - Subagent appends a summary to `PROJECT_ROADMAP.md`.
+    - Update `CLAUDE.md` or context files with new rules/configs.
+    - Verify memory is refreshed (`/memory`).
+
+**Expected Output**
+- Roadmap updated incrementally.
+- Context kept in sync.
+- Development log consistent.
+
+---

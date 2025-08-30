@@ -1,6 +1,6 @@
 # kickoff
 Use the `software-architect` subagent.
-Context: CLAUDE.md, README.md, user_stories.md, .claude/context/engineering.md.
+Context: CLAUDE.md, README.md, hsa_user_stories.md, .claude/context/engineering.md.
 Goals:
 1) Produce ARCHITECTURE.md (modules, data flow, DTOs, API contracts) for:
     - Frontend: React + TypeScript + Tailwind
