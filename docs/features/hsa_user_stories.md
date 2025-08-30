@@ -52,7 +52,7 @@ The stories build on the architecture defined in `ARCHITECTURE.md` and the exist
 
 ---
 
-## 3. Implement chatbot UI and CTA **Status:** TODO
+## 3. Implement chatbot UI and CTA **Status:** DONE
 
 **Prerequisites**
 - Backend QA service is available.
