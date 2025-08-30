@@ -1,7 +1,7 @@
 """
-Q&A history database model.
+HSA Assistant history database model.
 
-This module defines the SQLAlchemy model for tracking Q&A interactions
+This module defines the SQLAlchemy model for tracking HSA Assistant interactions
 in the HSA knowledge base system, supporting user story requirements.
 """
 
@@ -11,14 +11,14 @@ from sqlalchemy.orm import relationship
 from ..core.database import BaseModel
 
 
-class QAHistory(BaseModel):
+class HSAAssistantHistory(BaseModel):
     """
-    Q&A history tracking model.
+    HSA Assistant history tracking model.
     
     Tracks all question-answer interactions for analysis and improvement
     of the RAG system performance.
     """
-    __tablename__ = "qa_history"
+    __tablename__ = "hsa_assistant_history"
     
     # Question details
     question = Column(
@@ -85,5 +85,5 @@ class QAHistory(BaseModel):
     )
     
     def __repr__(self):
-        """String representation of QA history record."""
-        return f"<QAHistory(id={self.id}, confidence={self.confidence_score:.2f})>"
+        """String representation of HSA Assistant history record."""
+        return f"<HSAAssistantHistory(id={self.id}, confidence={self.confidence_score:.2f})>"

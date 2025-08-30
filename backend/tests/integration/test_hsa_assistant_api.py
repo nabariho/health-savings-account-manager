@@ -1,7 +1,7 @@
 """
-Integration tests for Q&A API endpoints.
+Integration tests for HSA Assistant API endpoints.
 
-Tests the complete RAG Q&A workflow including API endpoints, RAG service integration,
+Tests the complete RAG HSA Assistant workflow including API endpoints, RAG service integration,
 citation accuracy, and response quality as specified in user stories US-4.1 and US-4.2.
 """
 
@@ -13,7 +13,7 @@ import shutil
 from pathlib import Path
 
 from backend.main import app
-from backend.schemas.qa import QAResponse, Citation, VectorSearchResult, KnowledgeBaseStats
+from backend.schemas.hsa_assistant import QAResponse, Citation, VectorSearchResult, KnowledgeBaseStats
 
 
 @pytest.fixture
@@ -42,10 +42,10 @@ def mock_knowledge_base():
     shutil.rmtree(temp_dir)
 
 
-class TestQAAskEndpoint:
-    """Test cases for /api/v1/qa/ask endpoint."""
+class TestHSAAssistantAskEndpoint:
+    """Test cases for /api/v1/hsa_assistant/ask endpoint."""
 
-    @patch('backend.api.v1.qa.get_rag_service')
+    @patch('backend.api.v1.hsa_assistant.get_rag_service')
     def test_ask_question_success(self, mock_get_rag_service, client):
         """Test successful question processing with citations."""
         # Mock RAG service
@@ -68,7 +68,7 @@ class TestQAAskEndpoint:
         
         # Make request
         response = client.post(
-            "/api/v1/qa/ask",
+            "/api/v1/hsa_assistant/ask",
             json={
                 "question": "What are the HSA contribution limits for 2024?",
                 "application_id": "test-app-123"
@@ -101,7 +101,7 @@ class TestQAAskEndpoint:
         assert citation["document_name"] == "HSA_FAQ.txt"
         assert citation["relevance_score"] > 0.9
 
-    @patch('backend.api.v1.qa.get_rag_service')
+    @patch('backend.api.v1.hsa_assistant.get_rag_service')
     def test_ask_question_with_context(self, mock_get_rag_service, client):
         """Test question processing with additional context."""
         # Mock RAG service
@@ -124,7 +124,7 @@ class TestQAAskEndpoint:
         
         # Make request with context
         response = client.post(
-            "/api/v1/qa/ask",
+            "/api/v1/hsa_assistant/ask",
             json={
                 "question": "What is the contribution limit?",
                 "context": "I am asking about individual coverage",
@@ -138,7 +138,7 @@ class TestQAAskEndpoint:
         assert "4,150" in result["answer"] or "4150" in result["answer"]
         assert result["confidence_score"] > 0.8
 
-    @patch('backend.api.v1.qa.get_rag_service')
+    @patch('backend.api.v1.hsa_assistant.get_rag_service')
     def test_ask_question_no_answer_available(self, mock_get_rag_service, client):
         """Test handling when no relevant answer is found."""
         # Mock RAG service
@@ -155,7 +155,7 @@ class TestQAAskEndpoint:
         
         # Make request with unrelated question
         response = client.post(
-            "/api/v1/qa/ask",
+            "/api/v1/hsa_assistant/ask",
             json={
                 "question": "What is the capital of France?",
                 "application_id": "test-app-789"
@@ -173,21 +173,21 @@ class TestQAAskEndpoint:
     def test_ask_question_invalid_input(self, client):
         """Test validation of invalid question input."""
         # Test missing question
-        response = client.post("/api/v1/qa/ask", json={})
+        response = client.post("/api/v1/hsa_assistant/ask", json={})
         assert response.status_code == 422
         
         # Test question too short
-        response = client.post("/api/v1/qa/ask", json={"question": "Hi"})
+        response = client.post("/api/v1/hsa_assistant/ask", json={"question": "Hi"})
         assert response.status_code == 422
         
         # Test question too long
         long_question = "A" * 600  # Exceeds 500 char limit
-        response = client.post("/api/v1/qa/ask", json={"question": long_question})
+        response = client.post("/api/v1/hsa_assistant/ask", json={"question": long_question})
         assert response.status_code == 422
         
         # Test context too long
         response = client.post(
-            "/api/v1/qa/ask", 
+            "/api/v1/hsa_assistant/ask", 
             json={
                 "question": "What are HSA limits?",
                 "context": "B" * 1100  # Exceeds 1000 char limit
@@ -195,7 +195,7 @@ class TestQAAskEndpoint:
         )
         assert response.status_code == 422
 
-    @patch('backend.api.v1.qa.get_rag_service')
+    @patch('backend.api.v1.hsa_assistant.get_rag_service')
     def test_ask_question_service_error(self, mock_get_rag_service, client):
         """Test handling of RAG service errors."""
         # Mock RAG service to raise error
@@ -205,7 +205,7 @@ class TestQAAskEndpoint:
         
         # Make request
         response = client.post(
-            "/api/v1/qa/ask",
+            "/api/v1/hsa_assistant/ask",
             json={"question": "What are HSA contribution limits?"}
         )
         
@@ -220,7 +220,7 @@ class TestQAHistoryEndpoint:
     def test_get_qa_history_success(self, client):
         """Test successful retrieval of Q&A history."""
         # Currently returns empty list as database integration is not implemented
-        response = client.get("/api/v1/qa/history/test-app-123")
+        response = client.get("/api/v1/hsa_assistant/history/test-app-123")
         
         assert response.status_code == 200
         result = response.json()
@@ -229,7 +229,7 @@ class TestQAHistoryEndpoint:
 
     def test_get_qa_history_with_pagination(self, client):
         """Test Q&A history retrieval with pagination parameters."""
-        response = client.get("/api/v1/qa/history/test-app-123?limit=10&offset=5")
+        response = client.get("/api/v1/hsa_assistant/history/test-app-123?limit=10&offset=5")
         
         assert response.status_code == 200
         result = response.json()
@@ -238,14 +238,14 @@ class TestQAHistoryEndpoint:
     def test_get_qa_history_invalid_pagination(self, client):
         """Test Q&A history with invalid pagination parameters."""
         # Negative limit should be handled gracefully
-        response = client.get("/api/v1/qa/history/test-app-123?limit=-5")
+        response = client.get("/api/v1/hsa_assistant/history/test-app-123?limit=-5")
         assert response.status_code in [200, 422]  # Depends on validation implementation
 
 
 class TestVectorSearchEndpoint:
     """Test cases for /api/v1/qa/search endpoint."""
 
-    @patch('backend.api.v1.qa.get_rag_service')
+    @patch('backend.api.v1.hsa_assistant.get_rag_service')
     def test_vector_search_success(self, mock_get_rag_service, client):
         """Test successful vector similarity search."""
         # Mock RAG service
@@ -271,7 +271,7 @@ class TestVectorSearchEndpoint:
         
         # Make request
         response = client.post(
-            "/api/v1/qa/search",
+            "/api/v1/hsa_assistant/search",
             json={
                 "query": "HSA contribution limits",
                 "k": 5,
@@ -295,7 +295,7 @@ class TestVectorSearchEndpoint:
         # Verify similarity scores are in descending order
         assert result[0]["similarity_score"] >= result[1]["similarity_score"]
 
-    @patch('backend.api.v1.qa.get_rag_service')
+    @patch('backend.api.v1.hsa_assistant.get_rag_service')
     def test_vector_search_with_filters(self, mock_get_rag_service, client):
         """Test vector search with document filters."""
         mock_rag = AsyncMock()
@@ -313,7 +313,7 @@ class TestVectorSearchEndpoint:
         
         # Make request with document filter
         response = client.post(
-            "/api/v1/qa/search",
+            "/api/v1/hsa_assistant/search",
             json={
                 "query": "HSA eligibility",
                 "k": 3,
@@ -331,26 +331,26 @@ class TestVectorSearchEndpoint:
     def test_vector_search_invalid_parameters(self, client):
         """Test vector search with invalid parameters."""
         # Test missing query
-        response = client.post("/api/v1/qa/search", json={})
+        response = client.post("/api/v1/hsa_assistant/search", json={})
         assert response.status_code == 422
         
         # Test query too short
-        response = client.post("/api/v1/qa/search", json={"query": "Hi"})
+        response = client.post("/api/v1/hsa_assistant/search", json={"query": "Hi"})
         assert response.status_code == 422
         
         # Test invalid k value
-        response = client.post("/api/v1/qa/search", json={"query": "HSA limits", "k": 0})
+        response = client.post("/api/v1/hsa_assistant/search", json={"query": "HSA limits", "k": 0})
         assert response.status_code == 422
         
         # Test invalid threshold value
-        response = client.post("/api/v1/qa/search", json={"query": "HSA limits", "threshold": 1.5})
+        response = client.post("/api/v1/hsa_assistant/search", json={"query": "HSA limits", "threshold": 1.5})
         assert response.status_code == 422
 
 
 class TestKnowledgeBaseStatsEndpoint:
     """Test cases for /api/v1/qa/stats endpoint."""
 
-    @patch('backend.api.v1.qa.get_rag_service')
+    @patch('backend.api.v1.hsa_assistant.get_rag_service')
     def test_get_knowledge_base_stats_success(self, mock_get_rag_service, client):
         """Test successful retrieval of knowledge base statistics."""
         mock_rag = AsyncMock()
@@ -365,7 +365,7 @@ class TestKnowledgeBaseStatsEndpoint:
         mock_get_rag_service.return_value = mock_rag
         
         # Make request
-        response = client.get("/api/v1/qa/stats")
+        response = client.get("/api/v1/hsa_assistant/stats")
         
         # Verify response
         assert response.status_code == 200
@@ -384,7 +384,7 @@ class TestKnowledgeBaseStatsEndpoint:
         assert result["total_embeddings"] == 50
         assert result["average_chunk_size"] == 800.5
 
-    @patch('backend.api.v1.qa.get_rag_service')
+    @patch('backend.api.v1.hsa_assistant.get_rag_service')
     def test_get_knowledge_base_stats_service_error(self, mock_get_rag_service, client):
         """Test handling of service errors when getting stats."""
         mock_rag = AsyncMock()
@@ -392,7 +392,7 @@ class TestKnowledgeBaseStatsEndpoint:
         mock_get_rag_service.return_value = mock_rag
         
         # Make request
-        response = client.get("/api/v1/qa/stats")
+        response = client.get("/api/v1/hsa_assistant/stats")
         
         # Verify error response
         assert response.status_code == 500
@@ -402,7 +402,7 @@ class TestKnowledgeBaseStatsEndpoint:
 class TestRAGMetricsEndpoint:
     """Test cases for /api/v1/qa/metrics endpoint."""
 
-    @patch('backend.api.v1.qa.get_rag_service')
+    @patch('backend.api.v1.hsa_assistant.get_rag_service')
     def test_get_rag_metrics_success(self, mock_get_rag_service, client):
         """Test successful retrieval of RAG system metrics."""
         mock_rag = AsyncMock()
@@ -418,7 +418,7 @@ class TestRAGMetricsEndpoint:
         mock_get_rag_service.return_value = mock_rag
         
         # Make request
-        response = client.get("/api/v1/qa/metrics")
+        response = client.get("/api/v1/hsa_assistant/metrics")
         
         # Verify response
         assert response.status_code == 200
@@ -442,14 +442,14 @@ class TestRAGMetricsEndpoint:
 class TestKnowledgeBaseRebuild:
     """Test cases for /api/v1/qa/rebuild endpoint."""
 
-    @patch('backend.api.v1.qa.get_rag_service')
+    @patch('backend.api.v1.hsa_assistant.get_rag_service')
     def test_rebuild_knowledge_base_success(self, mock_get_rag_service, client):
         """Test successful knowledge base rebuild trigger."""
         mock_rag = AsyncMock()
         mock_get_rag_service.return_value = mock_rag
         
         # Make request
-        response = client.post("/api/v1/qa/rebuild")
+        response = client.post("/api/v1/hsa_assistant/rebuild")
         
         # Verify response
         assert response.status_code == 202
@@ -457,14 +457,14 @@ class TestKnowledgeBaseRebuild:
         assert "message" in result
         assert "rebuild started" in result["message"].lower()
 
-    @patch('backend.api.v1.qa.get_rag_service')
+    @patch('backend.api.v1.hsa_assistant.get_rag_service')
     def test_rebuild_knowledge_base_error(self, mock_get_rag_service, client):
         """Test handling of rebuild scheduling errors."""
         mock_rag = AsyncMock()
         mock_get_rag_service.side_effect = Exception("Service unavailable")
         
         # Make request
-        response = client.post("/api/v1/qa/rebuild")
+        response = client.post("/api/v1/hsa_assistant/rebuild")
         
         # Verify error response
         assert response.status_code == 500
@@ -474,7 +474,7 @@ class TestKnowledgeBaseRebuild:
 class TestQAHealthCheck:
     """Test cases for /api/v1/qa/health endpoint."""
 
-    @patch('backend.api.v1.qa.get_rag_service')
+    @patch('backend.api.v1.hsa_assistant.get_rag_service')
     def test_qa_health_check_success(self, mock_get_rag_service, client):
         """Test successful Q&A service health check."""
         mock_rag = AsyncMock()
@@ -490,7 +490,7 @@ class TestQAHealthCheck:
         mock_get_rag_service.return_value = mock_rag
         
         # Make request
-        response = client.get("/api/v1/qa/health")
+        response = client.get("/api/v1/hsa_assistant/health")
         
         # Verify response
         assert response.status_code == 200
@@ -503,7 +503,7 @@ class TestQAHealthCheck:
         assert result["total_documents"] > 0
         assert result["openai_client_configured"] is True
 
-    @patch('backend.api.v1.qa.get_rag_service')
+    @patch('backend.api.v1.hsa_assistant.get_rag_service')
     def test_qa_health_check_unhealthy(self, mock_get_rag_service, client):
         """Test Q&A service health check when service is unhealthy."""
         mock_rag = AsyncMock()
@@ -511,7 +511,7 @@ class TestQAHealthCheck:
         mock_get_rag_service.return_value = mock_rag
         
         # Make request
-        response = client.get("/api/v1/qa/health")
+        response = client.get("/api/v1/hsa_assistant/health")
         
         # Verify error response
         assert response.status_code == 503
@@ -523,7 +523,7 @@ class TestQAExampleQuestions:
 
     def test_get_example_questions(self, client):
         """Test retrieval of example questions."""
-        response = client.get("/api/v1/qa/examples")
+        response = client.get("/api/v1/hsa_assistant/examples")
         
         assert response.status_code == 200
         result = response.json()
@@ -541,7 +541,7 @@ class TestQAExampleQuestions:
 class TestCitationValidation:
     """Test citation accuracy and completeness requirements from US-4.1."""
 
-    @patch('backend.api.v1.qa.get_rag_service')
+    @patch('backend.api.v1.hsa_assistant.get_rag_service')
     def test_citations_include_required_fields(self, mock_get_rag_service, client):
         """Test that all citations include required fields."""
         mock_rag = AsyncMock()
@@ -570,7 +570,7 @@ class TestCitationValidation:
         
         # Make request
         response = client.post(
-            "/api/v1/qa/ask",
+            "/api/v1/hsa_assistant/ask",
             json={"question": "What are HSA contribution limits?"}
         )
         
@@ -600,7 +600,7 @@ class TestCitationValidation:
             if "page_number" in citation:
                 assert citation["page_number"] is None or isinstance(citation["page_number"], int)
 
-    @patch('backend.api.v1.qa.get_rag_service')
+    @patch('backend.api.v1.hsa_assistant.get_rag_service')
     def test_source_documents_match_citations(self, mock_get_rag_service, client):
         """Test that source_documents list matches citation document names."""
         mock_rag = AsyncMock()
@@ -632,7 +632,7 @@ class TestCitationValidation:
         
         # Make request
         response = client.post(
-            "/api/v1/qa/ask",
+            "/api/v1/hsa_assistant/ask",
             json={"question": "Test question"}
         )
         
@@ -647,7 +647,7 @@ class TestCitationValidation:
         # Verify source documents list matches unique citation documents
         assert citation_documents == source_documents
 
-    @patch('backend.api.v1.qa.get_rag_service')
+    @patch('backend.api.v1.hsa_assistant.get_rag_service')
     def test_high_confidence_answers_have_citations(self, mock_get_rag_service, client):
         """Test that high-confidence answers always include citations."""
         mock_rag = AsyncMock()
@@ -669,7 +669,7 @@ class TestCitationValidation:
         
         # Make request
         response = client.post(
-            "/api/v1/qa/ask",
+            "/api/v1/hsa_assistant/ask",
             json={"question": "What are HSA limits?"}
         )
         
@@ -682,7 +682,7 @@ class TestCitationValidation:
             assert len(result["citations"]) > 0
             assert len(result["source_documents"]) > 0
         
-    @patch('backend.api.v1.qa.get_rag_service')
+    @patch('backend.api.v1.hsa_assistant.get_rag_service')
     def test_low_confidence_answers_may_lack_citations(self, mock_get_rag_service, client):
         """Test that low-confidence answers may have no citations."""
         mock_rag = AsyncMock()
@@ -698,7 +698,7 @@ class TestCitationValidation:
         
         # Make request
         response = client.post(
-            "/api/v1/qa/ask",
+            "/api/v1/hsa_assistant/ask",
             json={"question": "Obscure question not in knowledge base"}
         )
         

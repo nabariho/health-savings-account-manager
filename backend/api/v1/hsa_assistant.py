@@ -1,7 +1,7 @@
 """
-Q&A API endpoints for HSA knowledge base queries.
+HSA Assistant API endpoints for HSA knowledge base queries.
 
-This module provides REST API endpoints for the RAG-powered Q&A system,
+This module provides REST API endpoints for the RAG-powered HSA Assistant system,
 enabling natural language questions about HSA rules with cited responses.
 
 Implements user stories US-4.1 and US-4.2 requirements.
@@ -13,15 +13,15 @@ from sqlalchemy.orm import Session
 import logging
 
 from ...core.database import get_db
-from ...schemas.qa import (
+from ...schemas.hsa_assistant import (
     QARequest, QAResponse, QAHistoryItem, VectorSearchRequest, VectorSearchResult,
     KnowledgeBaseStats, RAGMetrics
 )
 from ...services.rag_service import RAGService, RAGServiceError
-from ...models.qa_history import QAHistory
+from ...models.hsa_assistant_history import HSAAssistantHistory
 
 # Initialize router and service
-router = APIRouter(prefix="/qa", tags=["qa"])
+router = APIRouter(prefix="/hsa_assistant", tags=["hsa_assistant"])
 logger = logging.getLogger(__name__)
 
 # Global RAG service instance (in production, this would be dependency-injected)
@@ -81,8 +81,8 @@ async def ask_question(
         # Generate response using RAG service
         response = await rag_service.answer_question(request)
         
-        # Store Q&A session in database for history tracking
-        qa_record = QAHistory(
+        # Store HSA Assistant session in database for history tracking
+        assistant_record = HSAAssistantHistory(
             question=request.question,
             answer=response.answer,
             confidence_score=response.confidence_score,
@@ -92,9 +92,9 @@ async def ask_question(
             context=request.context,
             source_documents=",".join(response.source_documents)
         )
-        db.add(qa_record)
+        db.add(assistant_record)
         db.commit()
-        logger.info(f"Stored Q&A history record with ID: {qa_record.id}")
+        logger.info(f"Stored HSA Assistant history record with ID: {assistant_record.id}")
         
         logger.info(f"Question answered with confidence {response.confidence_score:.2f}")
         return response
@@ -114,14 +114,14 @@ async def ask_question(
 
 
 @router.get("/history/{application_id}", response_model=List[QAHistoryItem])
-async def get_qa_history(
+async def get_hsa_assistant_history(
     application_id: str,
     limit: int = 50,
     offset: int = 0,
     db: Session = Depends(get_db)
 ) -> List[QAHistoryItem]:
     """
-    Get Q&A history for a specific application.
+    Get HSA Assistant history for a specific application.
     
     Args:
         application_id: Application ID to get history for
@@ -130,18 +130,18 @@ async def get_qa_history(
         db: Database session dependency
         
     Returns:
-        List[QAHistoryItem]: Historical Q&A interactions
+        List[QAHistoryItem]: Historical HSA Assistant interactions
         
     Raises:
         HTTPException: If application not found or retrieval fails
     """
     try:
-        # Query Q&A history from database
-        query = db.query(QAHistory)
+        # Query HSA Assistant history from database
+        query = db.query(HSAAssistantHistory)
         if application_id and application_id != "all":
-            query = query.filter(QAHistory.application_id == application_id)
+            query = query.filter(HSAAssistantHistory.application_id == application_id)
         
-        history_records = query.order_by(QAHistory.created_at.desc()).offset(offset).limit(limit).all()
+        history_records = query.order_by(HSAAssistantHistory.created_at.desc()).offset(offset).limit(limit).all()
         
         # Convert to response format
         history_items = [
@@ -157,14 +157,14 @@ async def get_qa_history(
             for record in history_records
         ]
         
-        logger.info(f"Retrieved {len(history_items)} Q&A history items for application {application_id}")
+        logger.info(f"Retrieved {len(history_items)} HSA Assistant history items for application {application_id}")
         return history_items
         
     except Exception as e:
-        logger.error(f"Failed to retrieve Q&A history: {str(e)}")
+        logger.error(f"Failed to retrieve HSA Assistant history: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve Q&A history"
+            detail="Failed to retrieve HSA Assistant history"
         )
 
 
@@ -315,27 +315,27 @@ async def _rebuild_knowledge_base_task(rag_service: RAGService):
 
 
 @router.get("/health")
-async def qa_health_check(
+async def hsa_assistant_health_check(
     rag_service: RAGService = Depends(get_rag_service)
 ):
     """
-    Health check for Q&A service.
+    Health check for HSA Assistant service.
     
     Returns:
         Health status and service information
     """
     try:
         health_info = await rag_service.health_check()
-        health_info["service"] = "qa"
+        health_info["service"] = "hsa_assistant"
         health_info["timestamp"] = "2024-01-01T00:00:00Z"  # Would use actual timestamp
         
         return health_info
         
     except Exception as e:
-        logger.error(f"Q&A health check failed: {str(e)}")
+        logger.error(f"HSA Assistant health check failed: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Q&A service is unhealthy"
+            detail="HSA Assistant service is unhealthy"
         )
 
 
