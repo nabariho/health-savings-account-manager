@@ -50,6 +50,9 @@ RUN mkdir -p backend/logs backend/uploads backend/data \
 # Copy application code with proper ownership
 COPY --chown=appuser:appuser . ./backend/
 
+# Note: Knowledge base data (IRS PDF) is mounted via Docker volume in docker-compose.yml
+# See volume: ./data:/workspace/backend/data:ro
+
 # Switch to non-root user
 USER appuser
 

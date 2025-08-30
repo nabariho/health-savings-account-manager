@@ -19,8 +19,7 @@ from typing import List, Dict, Any, Optional
 from pathlib import Path
 
 from openai import OpenAI
-from openai.types.beta import VectorStore, VectorStoreFile
-from openai.types import FileObject
+from openai.types import VectorStore, FileObject
 
 from ..schemas.hsa_assistant import (
     QARequest, QAResponse, Citation, VectorSearchRequest, VectorSearchResult,
