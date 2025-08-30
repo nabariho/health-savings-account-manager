@@ -7,6 +7,18 @@
 - ./.claude/context/engineering.md
 
 ## Activity (append newest first)
+- 2025-08-30: **HSA CHATBOT ARCHITECTURE DESIGNED** - Simplified OpenAI-based RAG system architecture completed:
+  - ✅ **OpenAI Integration**: Full transition from local FAISS to OpenAI Vector Stores and Assistants API
+  - ✅ **Simplified Pipeline**: Direct OpenAI file upload, automatic chunking, built-in search capabilities
+  - ✅ **API Specifications**: POST /qa/query for questions, POST /qa/ingest for document uploads, streaming support  
+  - ✅ **Frontend Architecture**: Chat component with citations, CTA integration, session management, error handling
+  - ✅ **Knowledge Base Strategy**: Direct IRS PDF upload to OpenAI with automatic optimization
+  - ✅ **Performance Optimizations**: Response caching with Redis, OpenAI-optimized vector search
+  - ✅ **Security Measures**: Input sanitization, rate limiting, prompt injection prevention
+  - ✅ **Documentation Updated**: `/docs/architecture/hsa_chat_bot_architecture.md` with OpenAI-first implementation
+  - ✅ **Integration Points**: Application state management, CTA trigger logic, confidence scoring
+  - ✅ **Architecture Revision**: ARCHITECTURE.md updated to reflect OpenAI Assistants approach
+  - **Status**: Ready for backend implementation (Story #2: Implement backend QA service)
 - 2025-08-29: **DOCKER CONTAINERIZATION COMPLETED** - Full production-ready containerization:
   - ✅ **Multi-stage Dockerfiles**: Backend (Python 3.11-slim) and Frontend (nginx alpine) with non-root security
   - ✅ **Complete Docker Compose Stack**: 4 services (frontend, backend, postgres, redis) all healthy

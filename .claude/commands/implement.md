@@ -1,6 +1,6 @@
 # implement
 Use the `vertical-slice-implementer` subagent.
-Context: CLAUDE.md, README.md, user_stories.md, ARCHITECTURE.md, .claude/context/engineering.md.
+Context: CLAUDE.md, README.md, hsa_user_stories.md, ARCHITECTURE.md, .claude/context/engineering.md.
 Goals:
 - Implement ONE vertical slice mapped to a user story.
 - Frontend: React/TS/Tailwind UI + zod validation + React Query calls.

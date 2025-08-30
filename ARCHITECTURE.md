@@ -32,8 +32,8 @@ This document defines the technical architecture for the AI-powered Health Savin
                               │
                               ▼
 ┌─────────────────┬─────────────────┬─────────────────┬─────────────────┐
-│  Data Service   │  OCR Service    │  RAG Service    │ Decision Engine │
-│  SQLite/Files   │  Vision/Extract │  Vector Search  │  Rules/Scoring  │
+│  Data Service   │  OCR Service    │  QA Service     │ Decision Engine │
+│  SQLite/Files   │  Vision/Extract │  OpenAI Assist  │  Rules/Scoring  │
 └─────────────────┴─────────────────┴─────────────────┴─────────────────┘
 ```
 
@@ -316,10 +316,19 @@ GET /api/v1/documents/{document_id}/status
 
 ### Q&A System
 ```
-POST /api/v1/qa/ask
-- Ask question about HSA rules
-- Request: QARequest
-- Response: RAGResponse
+POST /api/v1/qa/query
+- Process user questions with OpenAI Assistant
+- Request: QAQueryRequest
+- Response: QAQueryResponse
+
+POST /api/v1/qa/ingest
+- Upload documents to OpenAI Vector Store (Admin only)
+- Request: IngestRequest
+- Response: IngestResponse
+
+GET /api/v1/qa/ingest/{task_id}/status
+- Check document upload status
+- Response: IngestStatusResponse
 
 GET /api/v1/qa/history/{application_id}
 - Get Q&A history for application
@@ -396,98 +405,160 @@ class DocumentProcessor:
         return GovernmentIdData.model_validate(extracted_data)
 ```
 
-### RAG Service (text-embedding-3-large)
+### QA Service (OpenAI Assistants API)
 
 ```python
-class RAGService:
-    def __init__(self, openai_client: OpenAI, vector_store: VectorStore):
+class OpenAIQAService:
+    def __init__(self, openai_client: OpenAI):
         self.openai_client = openai_client
-        self.vector_store = vector_store
-        self.embedding_model = "text-embedding-3-large"
-        self.response_model = "gpt-4o-mini-2024-07-18"
+        self.assistant_id = None  # Set during initialization
+        self.vector_store_id = None  # Set during initialization
     
-    async def build_knowledge_base(self, documents: List[str]) -> None:
+    async def initialize_assistant(self, documents: List[str]) -> None:
         """
-        Build vector embeddings for knowledge base documents
+        Create OpenAI Assistant with Vector Store
         
         Args:
-            documents: List of document paths to process
+            documents: List of document paths to upload
         """
+        # Create vector store
+        vector_store = await self.openai_client.beta.vector_stores.create(
+            name="hsa_knowledge_base",
+            expires_after={
+                "anchor": "last_active_at",
+                "days": 365
+            }
+        )
+        self.vector_store_id = vector_store.id
+        
+        # Upload documents
+        file_ids = []
         for doc_path in documents:
-            content = await self._load_document(doc_path)
-            chunks = self._chunk_document(content)
-            
-            for chunk in chunks:
-                embedding = await self._create_embedding(chunk.text)
-                await self.vector_store.store(
-                    id=chunk.id,
-                    embedding=embedding,
-                    metadata={
-                        "document": doc_path,
-                        "page": chunk.page,
-                        "text": chunk.text
-                    }
+            with open(doc_path, 'rb') as file:
+                uploaded_file = await self.openai_client.files.create(
+                    file=file,
+                    purpose="assistants"
                 )
+                file_ids.append(uploaded_file.id)
+        
+        # Add files to vector store
+        await self.openai_client.beta.vector_stores.file_batches.create(
+            vector_store_id=vector_store.id,
+            file_ids=file_ids
+        )
+        
+        # Create assistant
+        assistant = await self.openai_client.beta.assistants.create(
+            name="HSA Expert Assistant",
+            instructions="""You are an expert HSA advisor with access to official IRS documentation.
+            
+            Guidelines:
+            - Provide accurate HSA information based solely on the uploaded documents
+            - Include specific citations from IRS publications
+            - Use clear, accessible language for financial concepts
+            - Acknowledge limitations when information is insufficient
+            - Always cite the specific document and section for your answers
+            """,
+            model="gpt-4o-mini-2024-07-18",
+            tools=[{"type": "file_search"}],
+            tool_resources={
+                "file_search": {
+                    "vector_store_ids": [vector_store.id]
+                }
+            }
+        )
+        self.assistant_id = assistant.id
     
-    async def answer_question(self, question: str) -> RAGResponse:
+    async def answer_question(self, question: str, session_id: str = None) -> RAGResponse:
         """
-        Answer question using RAG with citations
+        Answer question using OpenAI Assistant with file search
         
         Args:
             question: User question
+            session_id: Optional session ID for conversation tracking
             
         Returns:
             Response with answer and citations
         """
-        # Create question embedding
-        question_embedding = await self._create_embedding(question)
+        # Create conversation thread
+        thread = await self.openai_client.beta.threads.create()
         
-        # Search for relevant passages
-        relevant_chunks = await self.vector_store.similarity_search(
-            embedding=question_embedding,
-            k=5,
-            threshold=0.7
+        # Add user message
+        await self.openai_client.beta.threads.messages.create(
+            thread_id=thread.id,
+            role="user",
+            content=question
         )
         
-        if not relevant_chunks:
+        # Run assistant with file search
+        run = await self.openai_client.beta.threads.runs.create(
+            thread_id=thread.id,
+            assistant_id=self.assistant_id,
+            tools=[{"type": "file_search"}]
+        )
+        
+        # Wait for completion
+        while run.status in ['queued', 'in_progress']:
+            await asyncio.sleep(1)
+            run = await self.openai_client.beta.threads.runs.retrieve(
+                thread_id=thread.id,
+                run_id=run.id
+            )
+        
+        if run.status != 'completed':
             return RAGResponse(
-                answer="I don't have information about that in my knowledge base.",
+                answer="I'm sorry, I encountered an error processing your question. Please try again.",
                 confidence_score=0.0,
                 citations=[],
                 source_documents=[]
             )
         
-        # Prepare context for LLM
-        context = "\n\n".join([
-            f"Document: {chunk.metadata['document']}\nPage: {chunk.metadata.get('page', 'N/A')}\nContent: {chunk.metadata['text']}"
-            for chunk in relevant_chunks
-        ])
-        
-        prompt = f"""
-        Based on the following context from HSA documentation, answer the user's question.
-        Include specific citations from the context in your answer.
-        
-        Context:
-        {context}
-        
-        Question: {question}
-        
-        Please provide a clear, accurate answer with citations to the specific document sections used.
-        If the context doesn't contain enough information to answer the question, say so.
-        """
-        
-        response = await self.openai_client.chat.completions.create(
-            model=self.response_model,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.1
+        # Get messages
+        messages = await self.openai_client.beta.threads.messages.list(
+            thread_id=thread.id
         )
         
-        citations = [
-            Citation(
-                document_name=chunk.metadata['document'],
-                page_number=chunk.metadata.get('page'),
-                excerpt=chunk.metadata['text'][:200] + "..." if len(chunk.metadata['text']) > 200 else chunk.metadata['text']
-            )
+        # Extract response and citations
+        return await self._extract_response_with_citations(messages)
+    
+    async def _extract_response_with_citations(self, messages) -> RAGResponse:
+        """Extract response and citations from OpenAI Assistant messages"""
+        # Get the latest assistant message
+        assistant_message = next(
+            msg for msg in reversed(messages.data) 
+            if msg.role == "assistant"
+        )
+        
+        # Extract text content
+        text_content = next(
+            content for content in assistant_message.content
+            if content.type == "text"
+        )
+        
+        answer = text_content.text.value
+        
+        # Process citations from annotations
+        citations = []
+        if text_content.text.annotations:
+            for annotation in text_content.text.annotations:
+                if annotation.type == "file_citation":
+                    citation = await self._process_file_citation(annotation)
+                    citations.append(citation)
+        
+        # Calculate confidence based on citation quality
+        confidence = 0.9 if citations else 0.5
+        
+        # Extract unique source documents
+        source_documents = list(set(
+            citation.document_name for citation in citations
+        ))
+        
+        return RAGResponse(
+            answer=answer,
+            confidence_score=confidence,
+            citations=citations,
+            source_documents=source_documents
+        )
             for chunk in relevant_chunks
         ]
         
@@ -1090,6 +1161,8 @@ health-savings-account-manager/
 │       └── test_scenarios.json
 │
 ├── docs/                        # Additional documentation
+│   ├── architecture/
+│   │   └── hsa_chat_bot_architecture.md  # Detailed RAG chatbot system design
 │   ├── api/
 │   │   └── openapi.yaml
 │   ├── deployment/
