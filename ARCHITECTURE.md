@@ -316,10 +316,19 @@ GET /api/v1/documents/{document_id}/status
 
 ### Q&A System
 ```
-POST /api/v1/qa/ask
-- Ask question about HSA rules
-- Request: QARequest
-- Response: RAGResponse
+POST /api/v1/qa/query
+- Process user questions with RAG pipeline
+- Request: QAQueryRequest
+- Response: QAQueryResponse
+
+POST /api/v1/qa/ingest
+- Rebuild knowledge base (Admin only)
+- Request: IngestRequest
+- Response: IngestResponse
+
+GET /api/v1/qa/ingest/{task_id}/status
+- Check knowledge base rebuild status
+- Response: IngestStatusResponse
 
 GET /api/v1/qa/history/{application_id}
 - Get Q&A history for application
@@ -1090,6 +1099,8 @@ health-savings-account-manager/
 │       └── test_scenarios.json
 │
 ├── docs/                        # Additional documentation
+│   ├── architecture/
+│   │   └── hsa_chat_bot_architecture.md  # Detailed RAG chatbot system design
 │   ├── api/
 │   │   └── openapi.yaml
 │   ├── deployment/
