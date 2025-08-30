@@ -8,8 +8,10 @@ pnpm-debug.log*
 # Production builds
 /build
 /dist
+dist/
 /.next/
 out/
+frontend/dist/
 
 # Runtime data
 pids
@@ -49,6 +51,7 @@ coverage/
 *.lcov
 coverage.xml
 coverage-final.json
+.coverage
 
 # nyc test coverage
 .nyc_output
@@ -107,6 +110,7 @@ __pycache__/
 .Python
 env/
 venv/
+.venv/
 ENV/
 
 # Temporary files
