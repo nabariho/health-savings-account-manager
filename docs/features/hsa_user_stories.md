@@ -6,7 +6,7 @@ The stories build on the architecture defined in `ARCHITECTURE.md` and the exist
 
 ---
 
-## 1. Design a chatbot architecture for HSA FAQs  **Status:** TODO
+## 1. Design a chatbot architecture for HSA FAQs  **Status:** COMPLETED
 
 **Prerequisites**
 - IRS HSA PDF exists at `data/knowledge_base/hsa/irs.pdf`.

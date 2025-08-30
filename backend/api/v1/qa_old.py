@@ -18,7 +18,6 @@ from ...schemas.qa import (
     KnowledgeBaseStats, RAGMetrics
 )
 from ...services.rag_service import RAGService, RAGServiceError
-from ...models.qa_history import QAHistory
 
 # Initialize router and service
 router = APIRouter(prefix="/qa", tags=["qa"])
@@ -81,20 +80,8 @@ async def ask_question(
         # Generate response using RAG service
         response = await rag_service.answer_question(request)
         
-        # Store Q&A session in database for history tracking
-        qa_record = QAHistory(
-            question=request.question,
-            answer=response.answer,
-            confidence_score=response.confidence_score,
-            citations_count=len(response.citations),
-            processing_time_ms=response.processing_time_ms,
-            application_id=request.application_id,
-            context=request.context,
-            source_documents=",".join(response.source_documents)
-        )
-        db.add(qa_record)
-        db.commit()
-        logger.info(f"Stored Q&A history record with ID: {qa_record.id}")
+        # TODO: Store Q&A session in database for history tracking
+        # This would be implemented when adding persistent storage
         
         logger.info(f"Question answered with confidence {response.confidence_score:.2f}")
         return response
@@ -136,29 +123,10 @@ async def get_qa_history(
         HTTPException: If application not found or retrieval fails
     """
     try:
-        # Query Q&A history from database
-        query = db.query(QAHistory)
-        if application_id and application_id != "all":
-            query = query.filter(QAHistory.application_id == application_id)
-        
-        history_records = query.order_by(QAHistory.created_at.desc()).offset(offset).limit(limit).all()
-        
-        # Convert to response format
-        history_items = [
-            QAHistoryItem(
-                id=str(record.id),
-                question=record.question,
-                answer=record.answer,
-                confidence_score=record.confidence_score,
-                citations_count=record.citations_count,
-                application_id=record.application_id,
-                created_at=record.created_at
-            )
-            for record in history_records
-        ]
-        
-        logger.info(f"Retrieved {len(history_items)} Q&A history items for application {application_id}")
-        return history_items
+        # TODO: Implement database query for Q&A history
+        # For now, return empty list as this requires database schema
+        logger.info(f"Retrieved Q&A history for application {application_id}")
+        return []
         
     except Exception as e:
         logger.error(f"Failed to retrieve Q&A history: {str(e)}")
