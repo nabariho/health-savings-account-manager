@@ -1,6 +1,6 @@
 # test
 Use the `test-generator-from-stories` subagent.
-Context: user_stories.md, README.md, ARCHITECTURE.md, .claude/context/engineering.md.
+Context: hsa_user_stories.md, README.md, ARCHITECTURE.md, .claude/context/engineering.md.
 Goals:
 - Derive tests for decision rules:
     - Expired ID → Reject
