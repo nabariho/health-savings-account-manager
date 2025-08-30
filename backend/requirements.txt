@@ -12,8 +12,8 @@ psycopg2-binary==2.9.9
 pydantic==2.5.0
 pydantic-settings==2.1.0
 
-# OpenAI integration
-openai==1.3.8
+# OpenAI integration - Updated for Assistants API
+openai>=1.40.0
 
 # Additional utilities
 python-jose[cryptography]==3.3.0
@@ -23,9 +23,8 @@ aiofiles==23.2.1
 # Image processing
 Pillow==10.1.0
 
-# Scientific computing for RAG service
-numpy==1.24.4
-scikit-learn==1.3.2
+# Python utilities for PDF handling and async tasks
+httpx==0.25.2
 
 # Production server
 gunicorn==21.2.0
@@ -33,4 +32,3 @@ gunicorn==21.2.0
 # Development dependencies
 pytest==7.4.3
 pytest-asyncio==0.21.1
-httpx==0.25.2

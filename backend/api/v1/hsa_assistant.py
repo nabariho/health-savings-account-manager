@@ -17,41 +17,37 @@ from ...schemas.hsa_assistant import (
     QARequest, QAResponse, QAHistoryItem, VectorSearchRequest, VectorSearchResult,
     KnowledgeBaseStats, RAGMetrics
 )
-from ...services.rag_service import RAGService, RAGServiceError
+from ...services.openai_vector_store_service import OpenAIVectorStoreService, OpenAIVectorStoreError
 from ...models.hsa_assistant_history import HSAAssistantHistory
 
 # Initialize router and service
 router = APIRouter(prefix="/hsa_assistant", tags=["hsa_assistant"])
 logger = logging.getLogger(__name__)
 
-# Global RAG service instance (in production, this would be dependency-injected)
-_rag_service: Optional[RAGService] = None
+# Global OpenAI Vector Store service instance (in production, this would be dependency-injected)
+_vector_store_service: Optional[OpenAIVectorStoreService] = None
 
 
-async def get_rag_service() -> RAGService:
+async def get_vector_store_service() -> OpenAIVectorStoreService:
     """
-    Dependency to get RAG service instance.
+    Dependency to get OpenAI Vector Store service instance.
     
-    Ensures knowledge base is built on first access.
+    Ensures vector store is initialized on first access.
     """
-    global _rag_service
+    global _vector_store_service
     
-    if _rag_service is None:
-        _rag_service = RAGService()
-        try:
-            await _rag_service.build_knowledge_base()
-            logger.info("Knowledge base initialized successfully")
-        except RAGServiceError as e:
-            logger.error(f"Failed to initialize knowledge base: {str(e)}")
-            # Continue with empty knowledge base for now
+    if _vector_store_service is None:
+        _vector_store_service = OpenAIVectorStoreService()
+        # Note: Vector store initialization is handled separately via /rebuild endpoint
+        logger.info("OpenAI Vector Store service initialized")
     
-    return _rag_service
+    return _vector_store_service
 
 
 @router.post("/ask", response_model=QAResponse)
 async def ask_question(
     request: QARequest,
-    rag_service: RAGService = Depends(get_rag_service),
+    vector_store_service: OpenAIVectorStoreService = Depends(get_vector_store_service),
     db: Session = Depends(get_db)
 ) -> QAResponse:
     """
@@ -59,14 +55,16 @@ async def ask_question(
     
     This endpoint implements US-4.1 requirements:
     - Natural language question input
-    - AI-powered answers based on HSA knowledge base
-    - Provide citations and sources for answers
+    - AI-powered answers based on IRS HSA knowledge base
+    - Provide citations and sources for answers  
     - Show confidence level for responses
     - Handle follow-up questions with context
     
+    Uses OpenAI Vector Stores API with file_search tool for RAG functionality.
+    
     Args:
         request: Question request with optional context
-        rag_service: RAG service dependency
+        vector_store_service: OpenAI Vector Store service dependency
         db: Database session dependency
         
     Returns:
@@ -78,8 +76,8 @@ async def ask_question(
     try:
         logger.info(f"Processing question: {request.question[:100]}...")
         
-        # Generate response using RAG service
-        response = await rag_service.answer_question(request)
+        # Generate response using OpenAI Vector Store service
+        response = await vector_store_service.answer_question(request)
         
         # Store HSA Assistant session in database for history tracking
         assistant_record = HSAAssistantHistory(
@@ -99,8 +97,8 @@ async def ask_question(
         logger.info(f"Question answered with confidence {response.confidence_score:.2f}")
         return response
         
-    except RAGServiceError as e:
-        logger.error(f"RAG service error: {str(e)}")
+    except OpenAIVectorStoreError as e:
+        logger.error(f"Vector store service error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Question processing failed: {str(e)}"
@@ -171,17 +169,17 @@ async def get_hsa_assistant_history(
 @router.post("/search", response_model=List[VectorSearchResult])
 async def vector_search(
     request: VectorSearchRequest,
-    rag_service: RAGService = Depends(get_rag_service)
+    vector_store_service: OpenAIVectorStoreService = Depends(get_vector_store_service)
 ) -> List[VectorSearchResult]:
     """
     Perform vector similarity search on knowledge base.
     
-    This endpoint allows direct access to the vector search functionality
+    This endpoint allows direct access to the OpenAI vector search functionality
     for debugging and advanced users.
     
     Args:
         request: Vector search parameters
-        rag_service: RAG service dependency
+        vector_store_service: OpenAI Vector Store service dependency
         
     Returns:
         List[VectorSearchResult]: Similar document chunks
@@ -192,12 +190,12 @@ async def vector_search(
     try:
         logger.info(f"Performing vector search: {request.query[:100]}...")
         
-        results = await rag_service.vector_search(request)
+        results = await vector_store_service.vector_search(request)
         
         logger.info(f"Vector search returned {len(results)} results")
         return results
         
-    except RAGServiceError as e:
+    except OpenAIVectorStoreError as e:
         logger.error(f"Vector search error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -207,15 +205,15 @@ async def vector_search(
 
 @router.get("/stats", response_model=KnowledgeBaseStats)
 async def get_knowledge_base_stats(
-    rag_service: RAGService = Depends(get_rag_service)
+    vector_store_service: OpenAIVectorStoreService = Depends(get_vector_store_service)
 ) -> KnowledgeBaseStats:
     """
-    Get statistics about the knowledge base.
+    Get statistics about the vector store knowledge base.
     
-    Useful for monitoring and debugging the RAG system.
+    Useful for monitoring and debugging the OpenAI Vector Store system.
     
     Args:
-        rag_service: RAG service dependency
+        vector_store_service: OpenAI Vector Store service dependency
         
     Returns:
         KnowledgeBaseStats: Knowledge base statistics
@@ -224,11 +222,11 @@ async def get_knowledge_base_stats(
         HTTPException: If stats calculation fails
     """
     try:
-        stats = await rag_service.get_knowledge_base_stats()
+        stats = await vector_store_service.get_knowledge_base_stats()
         logger.info(f"Retrieved knowledge base stats: {stats.total_documents} documents")
         return stats
         
-    except RAGServiceError as e:
+    except OpenAIVectorStoreError as e:
         logger.error(f"Failed to get knowledge base stats: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -238,15 +236,15 @@ async def get_knowledge_base_stats(
 
 @router.get("/metrics", response_model=RAGMetrics)
 async def get_rag_metrics(
-    rag_service: RAGService = Depends(get_rag_service)
+    vector_store_service: OpenAIVectorStoreService = Depends(get_vector_store_service)
 ) -> RAGMetrics:
     """
-    Get RAG system performance metrics.
+    Get OpenAI Vector Store system performance metrics.
     
     Provides insights into system performance, citation rates, and usage patterns.
     
     Args:
-        rag_service: RAG service dependency
+        vector_store_service: OpenAI Vector Store service dependency
         
     Returns:
         RAGMetrics: RAG system performance metrics
@@ -255,11 +253,11 @@ async def get_rag_metrics(
         HTTPException: If metrics calculation fails
     """
     try:
-        metrics = await rag_service.get_rag_metrics()
+        metrics = await vector_store_service.get_rag_metrics()
         logger.info(f"Retrieved RAG metrics: {metrics.total_queries} queries processed")
         return metrics
         
-    except RAGServiceError as e:
+    except OpenAIVectorStoreError as e:
         logger.error(f"Failed to get RAG metrics: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -270,17 +268,17 @@ async def get_rag_metrics(
 @router.post("/rebuild", status_code=202)
 async def rebuild_knowledge_base(
     background_tasks: BackgroundTasks,
-    rag_service: RAGService = Depends(get_rag_service)
+    vector_store_service: OpenAIVectorStoreService = Depends(get_vector_store_service)
 ):
     """
-    Trigger knowledge base rebuild.
+    Trigger vector store rebuild.
     
     Implements US-4.2 requirement for knowledge base management.
-    This endpoint rebuilds the vector embeddings from source documents.
+    This endpoint recreates the OpenAI vector store and re-uploads the IRS PDF.
     
     Args:
         background_tasks: FastAPI background tasks for async processing
-        rag_service: RAG service dependency
+        vector_store_service: OpenAI Vector Store service dependency
         
     Returns:
         Success message
@@ -290,10 +288,10 @@ async def rebuild_knowledge_base(
     """
     try:
         # Add rebuild task to background queue
-        background_tasks.add_task(_rebuild_knowledge_base_task, rag_service)
+        background_tasks.add_task(_rebuild_knowledge_base_task, vector_store_service)
         
         logger.info("Knowledge base rebuild task scheduled")
-        return {"message": "Knowledge base rebuild started. This may take several minutes."}
+        return {"message": "Vector store rebuild started. This may take several minutes to upload and process the IRS PDF."}
         
     except Exception as e:
         logger.error(f"Failed to schedule knowledge base rebuild: {str(e)}")
@@ -303,20 +301,20 @@ async def rebuild_knowledge_base(
         )
 
 
-async def _rebuild_knowledge_base_task(rag_service: RAGService):
-    """Background task to rebuild knowledge base."""
+async def _rebuild_knowledge_base_task(vector_store_service: OpenAIVectorStoreService):
+    """Background task to rebuild vector store knowledge base."""
     try:
-        logger.info("Starting knowledge base rebuild...")
-        await rag_service.build_knowledge_base()
-        logger.info("Knowledge base rebuild completed successfully")
+        logger.info("Starting vector store rebuild...")
+        await vector_store_service.rebuild_knowledge_base()
+        logger.info("Vector store rebuild completed successfully")
         
     except Exception as e:
-        logger.error(f"Knowledge base rebuild failed: {str(e)}")
+        logger.error(f"Vector store rebuild failed: {str(e)}")
 
 
 @router.get("/health")
 async def hsa_assistant_health_check(
-    rag_service: RAGService = Depends(get_rag_service)
+    vector_store_service: OpenAIVectorStoreService = Depends(get_vector_store_service)
 ):
     """
     Health check for HSA Assistant service.
@@ -325,7 +323,7 @@ async def hsa_assistant_health_check(
         Health status and service information
     """
     try:
-        health_info = await rag_service.health_check()
+        health_info = await vector_store_service.health_check()
         health_info["service"] = "hsa_assistant"
         health_info["timestamp"] = "2024-01-01T00:00:00Z"  # Would use actual timestamp
         

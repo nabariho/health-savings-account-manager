@@ -23,7 +23,7 @@ from openai import AsyncOpenAI
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 
-from ..schemas.qa import (
+from ..schemas.hsa_assistant import (
     QARequest, QAResponse, Citation, VectorSearchRequest, VectorSearchResult,
     KnowledgeBaseDocument, KnowledgeBaseStats, RAGMetrics
 )

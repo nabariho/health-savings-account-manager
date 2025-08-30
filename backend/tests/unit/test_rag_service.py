@@ -24,7 +24,7 @@ import numpy as np
 from backend.services.rag_service import (
     RAGService, RAGServiceError, VectorStore, DocumentChunker
 )
-from backend.schemas.qa import (
+from backend.schemas.hsa_assistant import (
     QARequest, QAResponse, Citation, VectorSearchRequest,
     KnowledgeBaseStats, RAGMetrics
 )
