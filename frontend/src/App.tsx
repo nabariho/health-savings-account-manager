@@ -39,15 +39,15 @@ function App() {
           <Routes>
             {/* Default route - redirect to chat */}
             <Route path="/" element={<Navigate to="/chat" replace />} />
-            
+
             {/* Chat page - main entry point */}
             <Route path="/chat" element={<ChatPage />} />
             <Route path="/chat/:applicationId" element={<ChatPage />} />
-            
+
             {/* Application flow */}
             <Route path="/personal-info" element={<PersonalInfoPage />} />
             <Route path="/documents" element={<DocumentUploadPage />} />
-            
+
             {/* Catch-all route - redirect to chat */}
             <Route path="*" element={<Navigate to="/chat" replace />} />
           </Routes>

@@ -225,7 +225,7 @@ Format your response to be informative and well-structured with proper detail.""
                 }
             ]
             
-            # Create response using OpenAI Chat Completions API 
+            # Create response using OpenAI Chat Completions API
             response = self.openai_client.chat.completions.create(
                 model=self.response_model,
                 messages=messages,
