@@ -73,7 +73,178 @@ The stories build on the architecture defined in `ARCHITECTURE.md` and the exist
 
 ---
 
-## 4. Add document upload endpoints and OCR service **Status:** TODO
+## 4. Enhanced Message Display with Rich Formatting **Status:** TODO **Priority:** P0
+
+**Prerequisites**
+- Existing ChatPage and MessageList components from Story 3.
+- HSA Assistant API returning basic text responses.
+
+**Requirements**
+1. **Enhanced Message Bubbles**:
+   - Distinct styling for user vs assistant messages with proper spacing
+   - Rich text formatting support (bold, italics, bullet points, numbered lists)
+   - Collapsible citation sections with source references
+   - Message timestamp display with "time ago" format
+   - Copy message functionality with toast notifications
+
+2. **Professional HSA Sales Representative Styling**:
+   - Assistant messages should display with bank branding colors
+   - Professional avatar/icon for the HSA sales representative
+   - Status indicators (typing, processing, delivered)
+   - Structured response formatting with clear sections
+
+3. **Message Actions**:
+   - Copy button for each message
+   - Regenerate response option for assistant messages  
+   - Thumbs up/down feedback buttons
+   - Share message functionality
+
+**Expected Output**
+- Enhanced MessageList component with rich formatting
+- Updated MessageBubble subcomponent with professional styling
+- Copy and feedback functionality implemented
+- Collapsible citation display working
+- Professional HSA sales representative visual identity
+
+---
+
+## 5. Professional Sales Representative Persona and Behavior **Status:** TODO **Priority:** P0
+
+**Prerequisites**
+- Enhanced message display from Story 4.
+- HSA Assistant API integration working.
+
+**Requirements**
+1. **Sales Representative Persona**:
+   - All responses should be from "Sarah, your HSA specialist"
+   - Professional, helpful, and knowledgeable tone
+   - Always reference IRS documentation when providing HSA information
+   - Proactive suggestions for HSA optimization and tax benefits
+
+2. **Enhanced Response Intelligence**:
+   - Structured responses with clear headings and bullet points
+   - Include relevant IRS document citations with confidence scores
+   - Provide personalized HSA contribution recommendations
+   - Offer follow-up questions to continue the conversation
+
+3. **Lead Qualification Integration**:
+   - Detect when users ask about HSA eligibility or setup
+   - Naturally guide conversations toward account opening
+   - Capture user intent and qualification status
+   - Integrate with existing CTA flow seamlessly
+
+**Expected Output**
+- Updated HSA Assistant API responses with sales persona
+- Professional conversation flow with lead qualification
+- Enhanced response structure with IRS citations
+- Integrated CTA triggering based on conversation context
+- Updated chat context to track sales engagement
+
+---
+
+## 6. Chat Session Management and History **Status:** TODO **Priority:** P0
+
+**Prerequisites**
+- Enhanced message display from Story 4.
+- Professional sales persona from Story 5.
+
+**Requirements**
+1. **Chat Session Management**:
+   - Create new chat sessions with descriptive titles
+   - Save and restore chat history across browser sessions
+   - Session list with timestamps and preview messages
+   - Delete individual sessions or clear all history
+
+2. **ChatGPT-like Sidebar**:
+   - Collapsible sidebar showing chat history
+   - Search functionality across all chat sessions
+   - Filter sessions by date, topic, or interaction type
+   - Quick access to frequently asked HSA questions
+
+3. **Enhanced Navigation**:
+   - Today/Yesterday/This Week session grouping
+   - Session renaming capability
+   - Star/bookmark important conversations
+   - Export conversation as PDF or text
+
+**Expected Output**
+- Chat sidebar component with session management
+- Backend API for session CRUD operations
+- Local storage integration for session persistence
+- Search functionality across chat history
+- Export functionality for conversations
+
+---
+
+## 7. Contextual Sales CTAs and Intelligent Engagement **Status:** TODO **Priority:** P1
+
+**Prerequisites**
+- Chat session management from Story 6.
+- Sales representative persona from Story 5.
+
+**Requirements**
+1. **Intelligent CTA Timing**:
+   - Analyze conversation context to determine optimal CTA placement
+   - Show different CTAs based on user questions (eligibility, contributions, tax benefits)
+   - Track user engagement and adjust CTA strategy
+   - A/B test different CTA messages and timing
+
+2. **Dynamic Sales Content**:
+   - Display relevant HSA benefits based on conversation topics
+   - Show personalized contribution calculators
+   - Provide tax savings estimates based on user's situation
+   - Include trust indicators (FDIC insurance, security badges)
+
+3. **Lead Scoring and Analytics**:
+   - Track user engagement metrics (session length, questions asked, CTA clicks)
+   - Score leads based on conversation quality and interest indicators
+   - Capture qualification information naturally through conversation
+   - Integration with CRM/lead management system
+
+**Expected Output**
+- Contextual CTA component with intelligent timing
+- Lead scoring algorithm integrated into chat context
+- Analytics dashboard for sales performance
+- Enhanced CTA conversion tracking
+- A/B testing framework for CTA optimization
+
+---
+
+## 8. Advanced UX Features and Accessibility **Status:** TODO **Priority:** P1
+
+**Prerequisites**
+- All core chat functionality from Stories 4-7.
+- Working sales representative behavior.
+
+**Requirements**
+1. **Theme and Personalization**:
+   - Dark/light theme toggle with system preference detection
+   - Font size adjustment for accessibility
+   - High contrast mode support
+   - Color customization options
+
+2. **Advanced Input Features**:
+   - Auto-resize text input area
+   - Suggested follow-up questions after each response
+   - Quick action buttons for common HSA questions
+   - Voice input capability (speech-to-text)
+
+3. **Enhanced Accessibility**:
+   - Full keyboard navigation support
+   - Screen reader compatibility
+   - ARIA labels and semantic markup
+   - Focus management for modal dialogs
+
+**Expected Output**
+- Theme switching functionality
+- Accessibility compliance (WCAG 2.1 AA)
+- Voice input integration
+- Enhanced keyboard navigation
+- Suggested questions component
+
+---
+
+## 9. Add document upload endpoints and OCR service **Status:** TODO **Priority:** P2
 
 **Prerequisites**
 - Personal info endpoints exist.
@@ -95,7 +266,7 @@ The stories build on the architecture defined in `ARCHITECTURE.md` and the exist
 
 ---
 
-## 5. Implement document upload UI **Status:** TODO
+## 10. Implement document upload UI **Status:** TODO **Priority:** P2
 
 **Prerequisites**
 - Document upload endpoints are working.
@@ -115,7 +286,7 @@ The stories build on the architecture defined in `ARCHITECTURE.md` and the exist
 
 ---
 
-## 6. Build decision engine endpoints **Status:** TODO
+## 11. Build decision engine endpoints **Status:** TODO **Priority:** P2
 
 **Prerequisites**
 - Personal info + documents stored in DB.
@@ -134,7 +305,7 @@ The stories build on the architecture defined in `ARCHITECTURE.md` and the exist
 
 ---
 
-## 7. Implement decision screen UI **Status:** TODO
+## 12. Implement decision screen UI **Status:** TODO **Priority:** P2
 
 **Prerequisites**
 - Decision endpoint is live.
@@ -153,7 +324,7 @@ The stories build on the architecture defined in `ARCHITECTURE.md` and the exist
 
 ---
 
-## 8. Ensure memory and roadmap updates **Status:** TODO
+## 13. Ensure memory and roadmap updates **Status:** TODO **Priority:** P2
 
 **Requirements**
 - At end of each story:
