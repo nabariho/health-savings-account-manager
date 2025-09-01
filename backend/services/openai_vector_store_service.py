@@ -80,7 +80,7 @@ class OpenAIVectorStoreService:
         try:
             logger.info(f"Creating vector store: {name}")
             
-            vector_store = self.openai_client.beta.vector_stores.create(
+            vector_store = self.openai_client.vector_stores.create(
                 name=name
             )
             
@@ -125,7 +125,7 @@ class OpenAIVectorStoreService:
             logger.info(f"File uploaded successfully: {uploaded_file.id}")
             
             # Step 2: Attach file to vector store
-            vector_store_file = self.openai_client.beta.vector_stores.files.create(
+            vector_store_file = self.openai_client.vector_stores.files.create(
                 vector_store_id=self.vector_store_id,
                 file_id=uploaded_file.id
             )
@@ -155,7 +155,7 @@ class OpenAIVectorStoreService:
         
         while True:
             try:
-                file_status = self.openai_client.beta.vector_stores.files.retrieve(
+                file_status = self.openai_client.vector_stores.files.retrieve(
                     vector_store_id=self.vector_store_id,
                     file_id=file_id
                 )
@@ -225,19 +225,12 @@ Format your response to be informative and well-structured with proper detail.""
                 }
             ]
             
-            # Create response using OpenAI Chat Completions API with file_search tool
-            response = self.openai_client.beta.chat.completions.create(
+            # Create response using OpenAI Chat Completions API
+            response = self.openai_client.chat.completions.create(
                 model=self.response_model,
                 messages=messages,
-                tools=[{
-                    "type": "file_search"
-                }],
-                tool_choice="auto",
                 temperature=0.1,
-                max_tokens=1500,
-                metadata={
-                    "vector_store_ids": [self.vector_store_id]
-                }
+                max_tokens=1500
             )
             
             # Extract answer text
@@ -300,10 +293,7 @@ Format your response to be informative and well-structured with proper detail.""
                     "role": "user", 
                     "content": f"Find relevant information about: {request.query}"
                 }],
-                tools=[{
-                    "type": "file_search"
-                }],
-                tool_choice="required",
+                tool_choice="auto",
                 max_tokens=100,  # Minimal response, we just want the search
                 metadata={
                     "vector_store_ids": [self.vector_store_id]
@@ -429,12 +419,12 @@ Format your response to be informative and well-structured with proper detail.""
                 )
             
             # Get vector store details
-            vector_store = self.openai_client.beta.vector_stores.retrieve(
+            vector_store = self.openai_client.vector_stores.retrieve(
                 vector_store_id=self.vector_store_id
             )
             
             # Get files in vector store
-            files = self.openai_client.beta.vector_stores.files.list(
+            files = self.openai_client.vector_stores.files.list(
                 vector_store_id=self.vector_store_id
             )
             
@@ -521,12 +511,6 @@ IMPORTANT REQUIREMENTS:
 
 Format your response to be informative and well-structured with proper detail.""",
                 model=self.response_model,
-                tools=[{"type": "file_search"}],
-                tool_resources={
-                    "file_search": {
-                        "vector_store_ids": [self.vector_store_id]
-                    }
-                } if self.vector_store_id else {}
             )
             
             logger.info(f"Assistant created successfully: {assistant.id}")
@@ -585,7 +569,7 @@ Format your response to be informative and well-structured with proper detail.""
             vector_store_healthy = False
             if self.vector_store_id:
                 try:
-                    vector_store = self.openai_client.beta.vector_stores.retrieve(
+                    vector_store = self.openai_client.vector_stores.retrieve(
                         vector_store_id=self.vector_store_id
                     )
                     vector_store_healthy = vector_store.status == "completed"

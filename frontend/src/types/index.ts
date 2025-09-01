@@ -25,3 +25,20 @@ export type {
   UploadProgress,
   DocumentUploadState,
 } from './document';
+
+export type {
+  Citation,
+  QARequest,
+  QAResponse,
+  QAHistoryItem,
+  ChatMessage,
+  ChatSession,
+  ChatContextActions,
+  ChatContextValue,
+  ChatComponentProps,
+  MessageListProps,
+  ChatInputProps,
+  CitationProps,
+  CTAProps,
+  ChatPageProps,
+} from './hsaAssistant';

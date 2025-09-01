@@ -79,20 +79,24 @@ async def ask_question(
         # Generate response using OpenAI Vector Store service
         response = await vector_store_service.answer_question(request)
         
-        # Store HSA Assistant session in database for history tracking
-        assistant_record = HSAAssistantHistory(
-            question=request.question,
-            answer=response.answer,
-            confidence_score=response.confidence_score,
-            citations_count=len(response.citations),
-            processing_time_ms=response.processing_time_ms,
-            application_id=request.application_id,
-            context=request.context,
-            source_documents=",".join(response.source_documents)
-        )
-        db.add(assistant_record)
-        db.commit()
-        logger.info(f"Stored HSA Assistant history record with ID: {assistant_record.id}")
+        # Store HSA Assistant session in database for history tracking (non-blocking)
+        try:
+            assistant_record = HSAAssistantHistory(
+                question=request.question,
+                answer=response.answer,
+                confidence_score=response.confidence_score,
+                citations_count=len(response.citations),
+                processing_time_ms=response.processing_time_ms,
+                application_id=request.application_id,
+                context=request.context,
+                source_documents=",".join(response.source_documents)
+            )
+            db.add(assistant_record)
+            db.commit()
+            logger.info(f"Stored HSA Assistant history record with ID: {assistant_record.id}")
+        except Exception as db_error:
+            logger.warning(f"Failed to store conversation history (non-critical): {str(db_error)}")
+            db.rollback()  # Rollback the failed transaction
         
         logger.info(f"Question answered with confidence {response.confidence_score:.2f}")
         return response

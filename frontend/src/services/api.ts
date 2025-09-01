@@ -69,7 +69,7 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 401) {
       // Handle authentication errors
       // Could redirect to login page or refresh token
-    } else if (error.response?.status >= 500) {
+    } else if (error.response?.status && error.response.status >= 500) {
       // Handle server errors
       console.error('Server error:', error.response?.data?.message);
     }

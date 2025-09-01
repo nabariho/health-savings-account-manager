@@ -5,7 +5,7 @@
  * and validation operations.
  */
 
-import { apiClient } from './api';
+import apiClient, { handleApiError } from './api';
 import type {
   DocumentType,
   DocumentProcessingResponse,
