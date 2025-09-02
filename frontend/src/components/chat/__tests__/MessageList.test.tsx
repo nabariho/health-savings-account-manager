@@ -163,7 +163,7 @@ describe('MessageList', () => {
       status: 'success',
     };
 
-    render(<MessageList messages=[assistantMessage]} />);
+    render(<MessageList messages={[assistantMessage]} />);
     
     expect(screen.queryByText('Sources:')).not.toBeInTheDocument();
   });
