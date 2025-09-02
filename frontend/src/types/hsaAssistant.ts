@@ -89,6 +89,12 @@ export interface ChatMessage {
   status?: 'sending' | 'success' | 'error';
   /** Error message if status is error */
   error?: string;
+  /** User feedback on the message */
+  feedback?: 'up' | 'down';
+  /** Whether message has been copied */
+  copied?: boolean;
+  /** Whether message content should be formatted as rich text */
+  richText?: boolean;
 }
 
 /**
@@ -119,6 +125,14 @@ export interface ChatContextActions {
   setApplicationId: (id: string) => void;
   /** Retry failed message */
   retryMessage: (messageId: string) => Promise<void>;
+  /** Copy message content to clipboard */
+  copyMessage: (messageId: string) => Promise<void>;
+  /** Regenerate assistant response */
+  regenerateResponse: (messageId: string) => Promise<void>;
+  /** Provide feedback on message */
+  provideFeedback: (messageId: string, feedback: 'up' | 'down') => Promise<void>;
+  /** Share message */
+  shareMessage: (messageId: string) => Promise<void>;
 }
 
 /**
