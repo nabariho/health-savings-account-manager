@@ -2,105 +2,158 @@
  * MessageList component for displaying chat messages.
  * 
  * Renders a scrollable list of chat messages with support for
- * user messages, assistant responses, citations, and loading states.
+ * user messages, assistant responses, citations, rich text formatting,
+ * and interactive message actions.
  */
 
 import React, { useEffect, useRef } from 'react';
 import clsx from 'clsx';
 import type { MessageListProps, ChatMessage } from '@/types/hsaAssistant';
+import { useChat } from '@/contexts/ChatContext';
+import { useToastActions } from '@/components/ui/Toast';
+import { MessageBubble } from './MessageBubble';
+import { RichTextRenderer } from './RichTextRenderer';
+import { MessageActions } from './MessageActions';
 import { CitationCard } from './CitationCard';
 
 /**
- * Individual message component.
+ * Individual message component with enhanced features.
  */
 interface MessageItemProps {
   message: ChatMessage;
-  onRetry?: (messageId: string) => void;
 }
 
-const MessageItem: React.FC<MessageItemProps> = ({ message, onRetry }) => {
+const MessageItem: React.FC<MessageItemProps> = ({ message }) => {
+  const {
+    copyMessage,
+    regenerateResponse,
+    provideFeedback,
+    shareMessage,
+    retryMessage,
+  } = useChat();
+  
+  const toast = useToastActions();
+  
   const isUser = message.role === 'user';
   const isError = message.status === 'error';
-  const isLoading = message.status === 'sending';
+
+  /**
+   * Handle copy action with toast feedback.
+   */
+  const handleCopy = async () => {
+    await copyMessage(message.id);
+    toast.success('Message copied to clipboard!');
+  };
+
+  /**
+   * Handle regenerate action.
+   */
+  const handleRegenerate = async (messageId: string) => {
+    await regenerateResponse(messageId);
+    toast.info('Regenerating response...');
+  };
+
+  /**
+   * Handle feedback action.
+   */
+  const handleFeedback = async (messageId: string, feedback: 'up' | 'down') => {
+    await provideFeedback(messageId, feedback);
+    toast.success(
+      feedback === 'up' 
+        ? 'Thanks for the positive feedback!' 
+        : 'Thanks for the feedback, we\'ll work to improve!'
+    );
+  };
+
+  /**
+   * Handle share action.
+   */
+  const handleShare = async (messageId: string) => {
+    await shareMessage(messageId);
+    if ('share' in navigator) {
+      toast.info('Message shared successfully!');
+    } else {
+      toast.success('Message copied to clipboard for sharing!');
+    }
+  };
+
+  /**
+   * Handle retry for error messages.
+   */
+  const handleRetry = async () => {
+    if (isUser) {
+      await retryMessage(message.id);
+    }
+  };
 
   return (
-    <div
-      className={clsx(
-        'flex w-full mb-4',
-        isUser ? 'justify-end' : 'justify-start'
-      )}
-    >
-      <div
-        className={clsx(
-          'max-w-[80%] rounded-lg px-4 py-3 shadow-sm',
-          isUser
-            ? 'bg-primary-600 text-white'
-            : isError
-            ? 'bg-red-50 border border-red-200'
-            : 'bg-gray-100 border border-gray-200',
-          isLoading && 'opacity-60'
-        )}
-      >
-        {/* Message content */}
-        <div className={clsx(
-          'whitespace-pre-wrap break-words',
-          isUser ? 'text-white' : isError ? 'text-red-700' : 'text-gray-900'
-        )}>
-          {message.content}
-        </div>
-
-        {/* Loading indicator */}
-        {isLoading && (
-          <div className="flex items-center mt-2 text-sm text-gray-500">
-            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-primary-600 mr-2"></div>
-            Sending...
+    <div className="relative group">
+      <MessageBubble message={message} showAvatar>
+        {/* Message content with rich text formatting */}
+        {message.richText !== false ? (
+          <RichTextRenderer 
+            content={message.content} 
+            compact={isUser}
+          />
+        ) : (
+          <div className="whitespace-pre-wrap break-words">
+            {message.content}
           </div>
         )}
 
         {/* Error state with retry button */}
-        {isError && onRetry && (
+        {isError && isUser && (
           <div className="mt-2 flex items-center gap-2">
             <button
-              onClick={() => onRetry(message.id)}
-              className="text-sm text-red-600 hover:text-red-800 underline"
+              onClick={handleRetry}
+              className="text-sm text-red-100 hover:text-white underline"
             >
               Retry
             </button>
           </div>
         )}
 
-        {/* Confidence score for assistant messages */}
-        {!isUser && message.confidence_score !== undefined && !isError && (
-          <div className="mt-2 text-xs text-gray-500">
-            Confidence: {(message.confidence_score * 100).toFixed(0)}%
-          </div>
-        )}
-
         {/* Citations for assistant messages */}
         {!isUser && message.citations && message.citations.length > 0 && (
-          <div className="mt-3">
-            <div className="text-xs font-medium text-gray-700 mb-2">
-              Sources:
-            </div>
-            <div className="space-y-2">
-              {message.citations.map((citation, index) => (
-                <CitationCard
-                  key={index}
-                  citation={citation}
-                  index={index}
-                />
-              ))}
-            </div>
+          <div className="mt-4">
+            <details className="group/citations">
+              <summary className="cursor-pointer text-xs font-medium text-gray-600 hover:text-gray-800 mb-2 flex items-center">
+                <span>Sources ({message.citations.length})</span>
+                <svg 
+                  className="w-4 h-4 ml-1 transform group-open/citations:rotate-90 transition-transform duration-200" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </summary>
+              <div className="space-y-2 mt-2">
+                {message.citations.map((citation, index) => (
+                  <CitationCard
+                    key={index}
+                    citation={citation}
+                    index={index}
+                  />
+                ))}
+              </div>
+            </details>
           </div>
         )}
+      </MessageBubble>
 
-        {/* Timestamp */}
-        <div className={clsx(
-          'mt-2 text-xs',
-          isUser ? 'text-primary-100' : 'text-gray-500'
-        )}>
-          {new Date(message.timestamp).toLocaleTimeString()}
-        </div>
+      {/* Message actions */}
+      <div className={clsx(
+        'flex items-center mt-1 px-1',
+        isUser ? 'justify-end' : 'justify-start ml-11'
+      )}>
+        <MessageActions
+          message={message}
+          onCopy={() => handleCopy()}
+          onRegenerate={!isUser ? handleRegenerate : undefined}
+          onFeedback={!isUser ? handleFeedback : undefined}
+          onShare={handleShare}
+        />
       </div>
     </div>
   );
@@ -170,10 +223,6 @@ export const MessageList: React.FC<MessageListProps> = ({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading]);
 
-  const handleRetry = (messageId: string) => {
-    // This would typically be passed down from parent or context
-    console.log('Retry message:', messageId);
-  };
 
   return (
     <div
@@ -190,7 +239,6 @@ export const MessageList: React.FC<MessageListProps> = ({
         <MessageItem
           key={message.id}
           message={message}
-          onRetry={handleRetry}
         />
       ))}
 
