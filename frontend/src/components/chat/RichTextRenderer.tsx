@@ -156,37 +156,125 @@ class MarkdownParser {
   }
 
   /**
-   * Parse inline elements like bold, italic, code, links.
+   * Parse inline elements like bold, italic, code, links safely using JSX.
    */
   private static parseInlineElements(text: string): React.ReactNode[] {
     let key = 0;
-    let processedText = text;
     
-    // Process bold text
-    processedText = processedText.replace(this.PATTERNS.bold, (_, group1, group2) => {
-      const content = group1 || group2;
-      return `<strong class="font-semibold">${content}</strong>`;
-    });
-
-    // Process italic text
-    processedText = processedText.replace(this.PATTERNS.italic, (_, group1, group2) => {
-      const content = group1 || group2;
-      return `<em class="italic">${content}</em>`;
-    });
-
-    // Process code spans
-    processedText = processedText.replace(this.PATTERNS.code, (_, code) => {
-      return `<code class="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono">${code}</code>`;
-    });
-
-    // Process links
-    processedText = processedText.replace(this.PATTERNS.link, (_, text, url) => {
-      return `<a href="${url}" class="text-primary-600 hover:text-primary-700 underline" target="_blank" rel="noopener noreferrer">${text}</a>`;
-    });
-
-    // Return the processed HTML as dangerouslySetInnerHTML for now
-    // In a production app, you might want to use a proper markdown library
-    return [<span key={`inline-${key++}`} dangerouslySetInnerHTML={{ __html: processedText }} />];
+    // Helper to create a parsing pipeline for all inline elements
+    const parseWithMultipleFormats = (content: string): React.ReactNode[] => {
+      const elements: React.ReactNode[] = [];
+      
+      // Find all inline formatting patterns
+      const patterns = [
+        { type: 'bold', regex: this.PATTERNS.bold },
+        { type: 'italic', regex: this.PATTERNS.italic },
+        { type: 'code', regex: this.PATTERNS.code },
+        { type: 'link', regex: this.PATTERNS.link },
+      ];
+      
+      const allMatches: Array<{ 
+        type: string; 
+        match: RegExpMatchArray; 
+        start: number; 
+        end: number;
+      }> = [];
+      
+      // Collect all matches with their positions
+      patterns.forEach(pattern => {
+        const matches = Array.from(content.matchAll(pattern.regex));
+        matches.forEach(match => {
+          if (match.index !== undefined) {
+            allMatches.push({
+              type: pattern.type,
+              match,
+              start: match.index,
+              end: match.index + match[0].length,
+            });
+          }
+        });
+      });
+      
+      // Sort matches by start position
+      allMatches.sort((a, b) => a.start - b.start);
+      
+      // If no matches, return plain text
+      if (allMatches.length === 0) {
+        return [<span key={`text-${key++}`}>{content}</span>];
+      }
+      
+      let lastIndex = 0;
+      
+      allMatches.forEach(({ type, match, start, end }) => {
+        // Add text before this match
+        if (start > lastIndex) {
+          const beforeText = content.slice(lastIndex, start);
+          if (beforeText) {
+            elements.push(<span key={`text-${key++}`}>{beforeText}</span>);
+          }
+        }
+        
+        // Add the formatted element
+        switch (type) {
+          case 'bold':
+            const boldText = match[1] || match[2];
+            elements.push(
+              <strong key={`bold-${key++}`} className="font-semibold">
+                {boldText}
+              </strong>
+            );
+            break;
+            
+          case 'italic':
+            const italicText = match[1] || match[2];
+            elements.push(
+              <em key={`italic-${key++}`} className="italic">
+                {italicText}
+              </em>
+            );
+            break;
+            
+          case 'code':
+            elements.push(
+              <code 
+                key={`code-${key++}`} 
+                className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono"
+              >
+                {match[1]}
+              </code>
+            );
+            break;
+            
+          case 'link':
+            elements.push(
+              <a
+                key={`link-${key++}`}
+                href={match[2]}
+                className="text-primary-600 hover:text-primary-700 underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {match[1]}
+              </a>
+            );
+            break;
+        }
+        
+        lastIndex = end;
+      });
+      
+      // Add remaining text after last match
+      if (lastIndex < content.length) {
+        const remainingText = content.slice(lastIndex);
+        if (remainingText) {
+          elements.push(<span key={`text-${key++}`}>{remainingText}</span>);
+        }
+      }
+      
+      return elements;
+    };
+    
+    return parseWithMultipleFormats(text);
   }
 
   /**
@@ -233,36 +321,128 @@ export const RichTextRenderer: React.FC<RichTextRendererProps> = ({
 
 /**
  * Simple helper for rendering inline-only rich text (no block elements).
+ * Uses safe JSX rendering instead of dangerouslySetInnerHTML.
  */
 export const InlineRichText: React.FC<{
   content: string;
   className?: string;
 }> = ({ content, className }) => {
-  // Only process inline elements, no paragraphs or lists
-  let processedContent = content;
+  let key = 0;
   
-  // Process bold text
-  processedContent = processedContent.replace(/\*\*(.*?)\*\*|__(.*?)__/g, (_, group1, group2) => {
-    const text = group1 || group2;
-    return `<strong class="font-semibold">${text}</strong>`;
-  });
+  // Helper function to safely parse inline formatting
+  const parseInlineFormatting = (text: string): JSX.Element[] => {
+    const elements: JSX.Element[] = [];
+    let currentText = text;
+    
+    // Process bold text: **text** or __text__
+    const boldMatches = Array.from(currentText.matchAll(/\*\*(.*?)\*\*|__(.*?)__/g));
+    if (boldMatches.length > 0) {
+      let lastIndex = 0;
+      boldMatches.forEach((match) => {
+        // Add text before bold
+        if (match.index! > lastIndex) {
+          const beforeText = currentText.slice(lastIndex, match.index);
+          if (beforeText) {
+            elements.push(<span key={`text-${key++}`}>{beforeText}</span>);
+          }
+        }
+        
+        // Add bold element
+        const boldText = match[1] || match[2];
+        elements.push(<strong key={`bold-${key++}`} className="font-semibold">{boldText}</strong>);
+        
+        lastIndex = match.index! + match[0].length;
+      });
+      
+      // Add remaining text
+      if (lastIndex < currentText.length) {
+        const remainingText = currentText.slice(lastIndex);
+        if (remainingText) {
+          elements.push(<span key={`text-${key++}`}>{remainingText}</span>);
+        }
+      }
+      
+      return elements;
+    }
+    
+    // Process italic text: *text* or _text_ (if no bold found)
+    const italicMatches = Array.from(currentText.matchAll(/(?<!\*)\*([^*]+)\*(?!\*)|(?<!_)_([^_]+)_(?!_)/g));
+    if (italicMatches.length > 0) {
+      let lastIndex = 0;
+      italicMatches.forEach((match) => {
+        // Add text before italic
+        if (match.index! > lastIndex) {
+          const beforeText = currentText.slice(lastIndex, match.index);
+          if (beforeText) {
+            elements.push(<span key={`text-${key++}`}>{beforeText}</span>);
+          }
+        }
+        
+        // Add italic element
+        const italicText = match[1] || match[2];
+        elements.push(<em key={`italic-${key++}`} className="italic">{italicText}</em>);
+        
+        lastIndex = match.index! + match[0].length;
+      });
+      
+      // Add remaining text
+      if (lastIndex < currentText.length) {
+        const remainingText = currentText.slice(lastIndex);
+        if (remainingText) {
+          elements.push(<span key={`text-${key++}`}>{remainingText}</span>);
+        }
+      }
+      
+      return elements;
+    }
+    
+    // Process code spans: `code`
+    const codeMatches = Array.from(currentText.matchAll(/`([^`]+)`/g));
+    if (codeMatches.length > 0) {
+      let lastIndex = 0;
+      codeMatches.forEach((match) => {
+        // Add text before code
+        if (match.index! > lastIndex) {
+          const beforeText = currentText.slice(lastIndex, match.index);
+          if (beforeText) {
+            elements.push(<span key={`text-${key++}`}>{beforeText}</span>);
+          }
+        }
+        
+        // Add code element
+        elements.push(
+          <code 
+            key={`code-${key++}`} 
+            className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono"
+          >
+            {match[1]}
+          </code>
+        );
+        
+        lastIndex = match.index! + match[0].length;
+      });
+      
+      // Add remaining text
+      if (lastIndex < currentText.length) {
+        const remainingText = currentText.slice(lastIndex);
+        if (remainingText) {
+          elements.push(<span key={`text-${key++}`}>{remainingText}</span>);
+        }
+      }
+      
+      return elements;
+    }
+    
+    // No formatting found, return plain text
+    return [<span key={`text-${key++}`}>{text}</span>];
+  };
 
-  // Process italic text
-  processedContent = processedContent.replace(/(?<!\*)\*([^*]+)\*(?!\*)|(?<!_)_([^_]+)_(?!_)/g, (_, group1, group2) => {
-    const text = group1 || group2;
-    return `<em class="italic">${text}</em>`;
-  });
-
-  // Process code spans
-  processedContent = processedContent.replace(/`([^`]+)`/g, (_, code) => {
-    return `<code class="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono">${code}</code>`;
-  });
+  const formattedElements = parseInlineFormatting(content);
 
   return (
-    <span
-      className={className}
-      dangerouslySetInnerHTML={{ __html: processedContent }}
-    />
+    <span className={className}>
+      {formattedElements}
+    </span>
   );
 };
 
