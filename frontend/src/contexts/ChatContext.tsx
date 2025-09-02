@@ -271,6 +271,99 @@ export function ChatProvider({ children, initialApplicationId }: ChatProviderPro
     await sendMessage(message.content);
   }, [state.messages, sendMessage]);
 
+  /**
+   * Copy message content to clipboard.
+   */
+  const copyMessage = useCallback(async (messageId: string): Promise<void> => {
+    const message = state.messages.find(msg => msg.id === messageId);
+    if (!message) return;
+
+    try {
+      await navigator.clipboard.writeText(message.content);
+      
+      // Update message to show it was copied
+      dispatch({
+        type: 'UPDATE_MESSAGE',
+        payload: { id: messageId, updates: { copied: true } }
+      });
+
+      // Reset copied status after 2 seconds
+      setTimeout(() => {
+        dispatch({
+          type: 'UPDATE_MESSAGE',
+          payload: { id: messageId, updates: { copied: false } }
+        });
+      }, 2000);
+    } catch (error) {
+      console.error('Failed to copy message:', error);
+    }
+  }, [state.messages]);
+
+  /**
+   * Regenerate assistant response.
+   */
+  const regenerateResponse = useCallback(async (messageId: string): Promise<void> => {
+    // Find the assistant message to regenerate
+    const assistantMessageIndex = state.messages.findIndex(msg => msg.id === messageId);
+    if (assistantMessageIndex === -1) return;
+
+    const assistantMessage = state.messages[assistantMessageIndex];
+    if (assistantMessage.role !== 'assistant') return;
+
+    // Find the preceding user message
+    const userMessage = assistantMessageIndex > 0 
+      ? state.messages[assistantMessageIndex - 1]
+      : null;
+
+    if (!userMessage || userMessage.role !== 'user') return;
+
+    // Remove the assistant message and regenerate
+    const updatedMessages = state.messages.filter(msg => msg.id !== messageId);
+    dispatch({ type: 'SET_MESSAGES', payload: updatedMessages });
+
+    // Resend the user's question
+    await sendMessage(userMessage.content);
+  }, [state.messages, sendMessage]);
+
+  /**
+   * Provide feedback on a message.
+   */
+  const provideFeedback = useCallback(async (messageId: string, feedback: 'up' | 'down'): Promise<void> => {
+    // Update message with feedback
+    dispatch({
+      type: 'UPDATE_MESSAGE',
+      payload: { id: messageId, updates: { feedback } }
+    });
+
+    // In a real app, you might want to send this feedback to the backend
+    // for analytics or training purposes
+    console.log(`Feedback provided for message ${messageId}:`, feedback);
+  }, []);
+
+  /**
+   * Share message.
+   */
+  const shareMessage = useCallback(async (messageId: string): Promise<void> => {
+    const message = state.messages.find(msg => msg.id === messageId);
+    if (!message) return;
+
+    try {
+      // Use Web Share API if available
+      if (navigator.share) {
+        await navigator.share({
+          title: 'HSA Assistant Message',
+          text: message.content,
+        });
+      } else {
+        // Fallback to clipboard
+        await navigator.clipboard.writeText(message.content);
+        console.log('Message copied to clipboard for sharing');
+      }
+    } catch (error) {
+      console.error('Failed to share message:', error);
+    }
+  }, [state.messages]);
+
   const contextValue: ChatContextValue = {
     ...state,
     sendMessage,
@@ -278,6 +371,10 @@ export function ChatProvider({ children, initialApplicationId }: ChatProviderPro
     loadHistory,
     setApplicationId,
     retryMessage,
+    copyMessage,
+    regenerateResponse,
+    provideFeedback,
+    shareMessage,
   };
 
   return (
