@@ -9,7 +9,17 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { vi } from 'vitest';
 import { MessageList } from '../MessageList';
+import { ToastProvider } from '../../ui/Toast';
+import { ChatProvider } from '../../../contexts/ChatContext';
 import type { ChatMessage, Citation } from '@/types/hsaAssistant';
+
+// Mock services
+vi.mock('@/services/hsaAssistantService', () => ({
+  hsaAssistantService: {
+    askQuestion: vi.fn(),
+    getHistory: vi.fn(),
+  },
+}));
 
 // Mock CitationCard component
 vi.mock('../CitationCard', () => ({
@@ -19,6 +29,15 @@ vi.mock('../CitationCard', () => ({
     </div>
   ),
 }));
+
+// Test wrapper with all necessary providers
+const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <ToastProvider>
+    <ChatProvider>
+      {children}
+    </ChatProvider>
+  </ToastProvider>
+);
 
 describe('MessageList', () => {
   const mockCitations: Citation[] = [
@@ -59,14 +78,22 @@ describe('MessageList', () => {
   });
 
   it('renders empty state when no messages', () => {
-    render(<MessageList messages={[]} />);
+    render(
+      <TestWrapper>
+        <MessageList messages={[]} />
+      </TestWrapper>
+    );
     
     expect(screen.getByText('Welcome to HSA Assistant')).toBeInTheDocument();
     expect(screen.getByText(/Ask me any questions about Health Savings Accounts/)).toBeInTheDocument();
   });
 
   it('does not render empty state when loading', () => {
-    render(<MessageList messages={[]} isLoading={true} />);
+    render(
+      <TestWrapper>
+        <MessageList messages={[]} isLoading={true} />
+      </TestWrapper>
+    );
     
     expect(screen.queryByText('Welcome to HSA Assistant')).not.toBeInTheDocument();
     expect(screen.getByText('HSA Assistant is thinking...')).toBeInTheDocument();
@@ -81,7 +108,7 @@ describe('MessageList', () => {
       status: 'success',
     };
 
-    render(<MessageList messages={[userMessage]} />);
+    render(<TestWrapper><MessageList messages={[userMessage]} />);
     
     expect(screen.getByText('Test user message')).toBeInTheDocument();
     
@@ -99,7 +126,7 @@ describe('MessageList', () => {
       status: 'success',
     };
 
-    render(<MessageList messages={[assistantMessage]} />);
+    render(<TestWrapper><MessageList messages={[assistantMessage]} />);
     
     expect(screen.getByText('Test assistant response')).toBeInTheDocument();
     
@@ -118,7 +145,7 @@ describe('MessageList', () => {
       status: 'success',
     };
 
-    render(<MessageList messages={[assistantMessage]} />);
+    render(<TestWrapper><MessageList messages={[assistantMessage]} />);
     
     expect(screen.getByText('Confidence: 85%')).toBeInTheDocument();
   });
@@ -132,7 +159,7 @@ describe('MessageList', () => {
       status: 'success',
     };
 
-    render(<MessageList messages={[userMessage]} />);
+    render(<TestWrapper><MessageList messages={[userMessage]} />);
     
     expect(screen.queryByText(/Confidence:/)).not.toBeInTheDocument();
   });
@@ -147,7 +174,7 @@ describe('MessageList', () => {
       status: 'success',
     };
 
-    render(<MessageList messages={[assistantMessage]} />);
+    render(<TestWrapper><MessageList messages={[assistantMessage]} />);
     
     expect(screen.getByText('Sources:')).toBeInTheDocument();
     expect(screen.getByTestId('citation-0')).toBeInTheDocument();
@@ -163,7 +190,7 @@ describe('MessageList', () => {
       status: 'success',
     };
 
-    render(<MessageList messages=[assistantMessage]} />);
+    render(<TestWrapper><MessageList messages={[assistantMessage]} />);
     
     expect(screen.queryByText('Sources:')).not.toBeInTheDocument();
   });
@@ -177,7 +204,7 @@ describe('MessageList', () => {
       status: 'success',
     };
 
-    render(<MessageList messages={[message]} />);
+    render(<TestWrapper><MessageList messages={[message]} />);
     
     // The timestamp should be formatted as a locale time string
     const timestamp = new Date('2024-01-15T10:30:45Z').toLocaleTimeString();
@@ -194,7 +221,7 @@ describe('MessageList', () => {
       error: 'Network error',
     };
 
-    render(<MessageList messages={[errorMessage]} />);
+    render(<TestWrapper><MessageList messages={[errorMessage]} />);
     
     expect(screen.getByText('Sorry, an error occurred')).toBeInTheDocument();
     
@@ -215,7 +242,7 @@ describe('MessageList', () => {
       status: 'sending',
     };
 
-    render(<MessageList messages={[loadingMessage]} />);
+    render(<TestWrapper><MessageList messages={[loadingMessage]} />);
     
     expect(screen.getByText('Sending message...')).toBeInTheDocument();
     expect(screen.getByText('Sending...')).toBeInTheDocument();
@@ -226,7 +253,7 @@ describe('MessageList', () => {
   });
 
   it('shows loading dots when isLoading is true', () => {
-    render(<MessageList messages={[]} isLoading={true} />);
+    render(<TestWrapper><MessageList messages={[]} isLoading={true} />);
     
     expect(screen.getByText('HSA Assistant is thinking...')).toBeInTheDocument();
     
@@ -249,7 +276,7 @@ describe('MessageList', () => {
       status: 'error',
     };
 
-    render(<MessageList messages={[errorMessage]} />);
+    render(<TestWrapper><MessageList messages={[errorMessage]} />);
     
     const retryButton = screen.getByText('Retry');
     fireEvent.click(retryButton);
@@ -260,7 +287,7 @@ describe('MessageList', () => {
   });
 
   it('renders multiple messages in correct order', () => {
-    render(<MessageList messages={mockMessages} />);
+    render(<TestWrapper><MessageList messages={mockMessages} />);
     
     const messages = screen.getAllByText(/HSA|What are/);
     expect(messages).toHaveLength(2);
@@ -273,7 +300,7 @@ describe('MessageList', () => {
 
   it('applies custom className', () => {
     const customClass = 'custom-message-list';
-    render(<MessageList messages={[]} className={customClass} />);
+    render(<TestWrapper><MessageList messages={[]} className={customClass} />);
     
     const container = screen.getByText('Welcome to HSA Assistant').closest('.flex-1');
     expect(container).toHaveClass(customClass);
@@ -288,7 +315,7 @@ describe('MessageList', () => {
       status: 'success',
     };
 
-    render(<MessageList messages={[messageWithWhitespace]} />);
+    render(<TestWrapper><MessageList messages={[messageWithWhitespace]} />);
     
     // Check that the content div has whitespace preservation
     const contentDiv = screen.getByText(/Line 1/).closest('div');
@@ -305,7 +332,7 @@ describe('MessageList', () => {
       status: 'success',
     };
 
-    render(<MessageList messages={[messageWithoutCitations]} />);
+    render(<TestWrapper><MessageList messages={[messageWithoutCitations]} />);
     
     expect(screen.getByText('Response without citations')).toBeInTheDocument();
     expect(screen.queryByText('Sources:')).not.toBeInTheDocument();
@@ -320,7 +347,7 @@ describe('MessageList', () => {
       status: 'success',
     };
 
-    render(<MessageList messages={[messageWithoutConfidence]} />);
+    render(<TestWrapper><MessageList messages={[messageWithoutConfidence]} />);
     
     expect(screen.getByText('Response without confidence')).toBeInTheDocument();
     expect(screen.queryByText(/Confidence:/)).not.toBeInTheDocument();
@@ -336,14 +363,14 @@ describe('MessageList', () => {
       status: 'error',
     };
 
-    render(<MessageList messages={[errorMessage]} />);
+    render(<TestWrapper><MessageList messages={[errorMessage]} />);
     
     expect(screen.getByText('Error message')).toBeInTheDocument();
     expect(screen.queryByText(/Confidence:/)).not.toBeInTheDocument();
   });
 
   it('positions user messages on the right and assistant messages on the left', () => {
-    render(<MessageList messages={mockMessages} />);
+    render(<TestWrapper><MessageList messages={mockMessages} />);
     
     // User message container should be right-aligned
     const userMessageContainer = screen.getByText('What are the HSA contribution limits for 2024?')
@@ -357,14 +384,14 @@ describe('MessageList', () => {
   });
 
   it('auto-scrolls to bottom on new messages', () => {
-    const { rerender } = render(<MessageList messages={[mockMessages[0]]} />);
+    const { rerender } = render(<TestWrapper><MessageList messages={[mockMessages[0]]} />);
     
     // Mock scrollIntoView
     const mockScrollIntoView = vi.fn();
     Element.prototype.scrollIntoView = mockScrollIntoView;
     
     // Add a new message
-    rerender(<MessageList messages={mockMessages} />);
+    rerender(<TestWrapper><MessageList messages={mockMessages} />);
     
     expect(mockScrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth' });
   });
@@ -373,9 +400,9 @@ describe('MessageList', () => {
     const mockScrollIntoView = vi.fn();
     Element.prototype.scrollIntoView = mockScrollIntoView;
     
-    const { rerender } = render(<MessageList messages={mockMessages} isLoading={false} />);
+    const { rerender } = render(<TestWrapper><MessageList messages={mockMessages} isLoading={false} />);
     
-    rerender(<MessageList messages={mockMessages} isLoading={true} />);
+    rerender(<TestWrapper><MessageList messages={mockMessages} isLoading={true} />);
     
     expect(mockScrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth' });
   });
