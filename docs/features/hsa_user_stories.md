@@ -73,7 +73,7 @@ The stories build on the architecture defined in `ARCHITECTURE.md` and the exist
 
 ---
 
-## 4. Enhanced Message Display with Rich Formatting **Status:** TODO **Priority:** P0
+## 4. Enhanced Message Display with Rich Formatting **Status:** DONE **Priority:** P0
 
 **Prerequisites**
 - Existing ChatPage and MessageList components from Story 3.
